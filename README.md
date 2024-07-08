@@ -1,295 +1,122 @@
-# Test
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-public class EntityGroupDTO {
-    private String entityType;
-    private String firstName;
-    private String lastName;
-    private String firmName;
-    private Integer refNo;
-    private List<PhoneDTO> phones;
-    private List<AddressDTO> addresses;
-
-    public EntityGroupDTO(String entityType, String firstName, String lastName, String firmName, Integer refNo) {
-        this.entityType = entityType;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.firmName = firmName;
-        this.refNo = refNo;
-        this.phones = new ArrayList<>();
-        this.addresses = new ArrayList<>();
-    }
-
-    public String getEntityType() {
-        return entityType;
-    }
-
-    public void setEntityType(String entityType) {
-        this.entityType = entityType;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getFirmName() {
-        return firmName;
-    }
-
-    public void setFirmName(String firmName) {
-        this.firmName = firmName;
-    }
-
-    public Integer getRefNo() {
-        return refNo;
-    }
-
-    public void setRefNo(Integer refNo) {
-        this.refNo = refNo;
-    }
-
-    public List<PhoneDTO> getPhones() {
-        return phones;
-    }
-
-    public void setPhones(List<PhoneDTO> phones) {
-        this.phones = phones;
-    }
-
-    public List<AddressDTO> getAddresses() {
-        return addresses;
-    }
-
-    public void setAddresses(List<AddressDTO> addresses) {
-        this.addresses = addresses;
-    }
+To apply another filter for paths that match /create/** but are not /create/quote/**, you can define
+another custom filter for these routes. Here’s how you can achieve this:
+1. Set Up Gateway Routes: Configure the routes in application.properties for simple
+redirection, for the special route /create/quote/**, and for other /create/** paths.
+2. Custom Filters: Implement custom filters for each specific route logic.
+Step 1: Configure Routes in application.properties
+Add the following configuration to your application.properties file:
+spring.cloud.gateway.routes[0].id=simple-redirect
+spring.cloud.gateway.routes[0].uri=http://new-base-path
+spring.cloud.gateway.routes[0].predicates[0]=Path=/some/path/**
+spring.cloud.gateway.routes[1].id=create-quote
+spring.cloud.gateway.routes[1].uri=lb://your-middleware-service
+spring.cloud.gateway.routes[1].predicates[0]=Path=/create/quote/**
+spring.cloud.gateway.routes[2].id=create-other
+spring.cloud.gateway.routes[2].uri=lb://your-middleware-service
+spring.cloud.gateway.routes[2].predicates[0]=Path=/create/**
+spring.cloud.gateway.routes[2].filters[0]=RewritePath=/create/(?&lt;segment&gt;.*), /${segment}
+Step 2: Implement Custom Filters
+Custom Filter for /create/quote/**
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.core.Ordered;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+@Component
+public class CustomQuoteFilter extends AbstractGatewayFilterFactory&lt;CustomQuoteFilter.Config&gt; {
+@Autowired
+private WebClient.Builder webClientBuilder;
+public CustomQuoteFilter() {
+super(Config.class);
 }
+public static class Config {
 
-class PhoneDTO {
-    private String phType;
-    private String phNum;
-
-    public PhoneDTO(String phType, String phNum) {
-        this.phType = phType;
-        this.phNum = phNum;
-    }
-
-    public String getPhType() {
-        return phType;
-    }
-
-    public void setPhType(String phType) {
-        this.phType = phType;
-    }
-
-    public String getPhNum() {
-        return phNum;
-    }
-
-    public void setPhNum(String phNum) {
-        this.phNum = phNum;
-    }
+// Put the configuration properties for your filter here
 }
-
-class AddressDTO {
-    private String addressType;
-    private String addLine1;
-    private String addLine2;
-
-    public AddressDTO(String addressType, String addLine1, String addLine2) {
-        this.addressType = addressType;
-        this.addLine1 = addLine1;
-        this.addLine2 = addLine2;
-    }
-
-    public String getAddressType() {
-        return addressType;
-    }
-
-    public void setAddressType(String addressType) {
-        this.addressType = addressType;
-    }
-
-    public String getAddLine1() {
-        return addLine1;
-    }
-
-    public void setAddLine1(String addLine1) {
-        this.addLine1 = addLine1;
-    }
-
-    public String getAddLine2() {
-        return addLine2;
-    }
-
-    public void setAddLine2(String addLine2) {
-        this.addLine2 = addLine2;
-    }
+@Override
+public GatewayFilter apply(Config config) {
+return (exchange, chain) -&gt; {
+String path = exchange.getRequest().getURI().getPath();
+if (path.matches(&quot;/create/quote/.*&quot;)) {
+return callExternalApi(exchange, chain);
 }
-
-public class EntityDTO {
-    private String entityType;
-    private String firstName;
-    private String lastName;
-    private String firmName;
-    private Integer refNo;
-    private String addLine1;
-    private String addLine2;
-    private String addressType;
-    private String phType;
-    private String phNum;
-
-    public EntityDTO() {
-        // Default constructor
-    }
-
-    public EntityDTO(String entityType, String firstName, String lastName, String firmName, Integer refNo, String addLine1, String addLine2, String addressType, String phType, String phNum) {
-        this.entityType = entityType;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.firmName = firmName;
-        this.refNo = refNo;
-        this.addLine1 = addLine1;
-        this.addLine2 = addLine2;
-        this.addressType = addressType;
-        this.phType = phType;
-        this.phNum = phNum;
-    }
-
-    public String getEntityType() {
-        return entityType;
-    }
-
-    public void setEntityType(String entityType) {
-        this.entityType = entityType;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getFirmName() {
-        return firmName;
-    }
-
-    public void setFirmName(String firmName) {
-        this.firmName = firmName;
-    }
-
-    public Integer getRefNo() {
-        return refNo;
-    }
-
-    public void setRefNo(Integer refNo) {
-        this.refNo = refNo;
-    }
-
-    public String getAddLine1() {
-        return addLine1;
-    }
-
-    public void setAddLine1(String addLine1) {
-        this.addLine1 = addLine1;
-    }
-
-    public String getAddLine2() {
-        return addLine2;
-    }
-
-    public void setAddLine2(String addLine2) {
-        this.addLine2 = addLine2;
-    }
-
-    public String getAddressType() {
-        return addressType;
-    }
-
-    public void setAddressType(String addressType) {
-        this.addressType = addressType;
-    }
-
-    public String getPhType() {
-        return phType;
-    }
-
-    public void setPhType(String phType) {
-        this.phType = phType;
-    }
-
-    public String getPhNum() {
-        return phNum;
-    }
-
-    public void setPhNum(String phNum) {
-        this.phNum = phNum;
-    }
-
-    public static List<EntityGroupDTO> groupByEntityType(List<EntityDTO> entityDTOList) {
-        Map<String, EntityGroupDTO> entityGroupMap = new HashMap<>();
-
-        entityDTOList.forEach(entityDTO -> {
-            String entityType = entityDTO.getEntityType();
-
-            if (!entityGroupMap.containsKey(entityType)) {
-                EntityGroupDTO entityGroupDTO = new EntityGroupDTO(entityType, entityDTO.getFirstName(),
-                        entityDTO.getLastName(), entityDTO.getFirmName(), entityDTO.getRefNo());
-                entityGroupMap.put(entityType, entityGroupDTO);
-            }
-
-            EntityGroupDTO entityGroupDTO = entityGroupMap.get(entityType);
-
-            String phType = entityDTO.getPhType();
-            if (!entityGroupDTO.getPhones().stream().anyMatch(phone -> phone.getPhType().equals(phType))) {
-                PhoneDTO phoneDTO = new PhoneDTO(phType, entityDTO.getPhNum());
-                entityGroupDTO.getPhones().add(phoneDTO);
-            }
-
-            String addressType = entityDTO.getAddressType();
-            if (!entityGroupDTO.getAddresses().stream().anyMatch(address -> address.getAddressType().equals(addressType))) {
-                AddressDTO addressDTO = new AddressDTO(addressType, entityDTO.getAddLine1(), entityDTO.getAddLine2());
-                entityGroupDTO.getAddresses().add(addressDTO);
-            }
-        });
-
-        return List.copyOf(entityGroupMap.values());
-    }
+return chain.filter(exchange);
+};
 }
-
-    public String getPhNum() {
-        return phNum;
-    }
-
-    public void setPhNum(String phNum) {
-        this.phNum = phNum;
-    }
+private Mono&lt;Void&gt; callExternalApi(ServerWebExchange exchange, GatewayFilterChain chain) {
+return webClientBuilder.build()
+.get()
+.uri(&quot;http://external-api/path&quot;)
+.retrieve()
+.bodyToMono(String.class)
+.flatMap(response -&gt; {
+// Use the response to call the second API
+return webClientBuilder.build()
+.get()
+.uri(&quot;http://bcapp/path&quot;)
+.retrieve()
+.bodyToMono(String.class)
+.flatMap(secondResponse -&gt; {
+// Process the second API response and forward it to the client
+exchange.getResponse().setStatusCode(HttpStatus.OK);
+return exchange.getResponse().writeWith(Mono.just(exchange.getResponse()
+.bufferFactory()
+.wrap(secondResponse.getBytes())));
+});
+});
 }
-
 }
+Custom Filter for Other /create/** Paths
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+@Component
+public class CustomCreateFilter extends AbstractGatewayFilterFactory&lt;CustomCreateFilter.Config&gt; {
+public CustomCreateFilter() {
+
+super(Config.class);
+}
+public static class Config {
+// Put the configuration properties for your filter here
+}
+@Override
+public GatewayFilter apply(Config config) {
+return (exchange, chain) -&gt; {
+// Custom logic for other /create/** paths
+return chain.filter(exchange);
+};
+}
+}
+Step 3: Register the Custom Filters
+Register your custom filters in the Spring Boot application:
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+@Configuration
+public class GatewayConfig {
+@Bean
+public RouteLocator customRouteLocator(RouteLocatorBuilder builder, CustomQuoteFilter
+customQuoteFilter, CustomCreateFilter customCreateFilter) {
+return builder.routes()
+.route(&quot;create-quote&quot;, r -&gt; r.path(&quot;/create/quote/**&quot;)
+.filters(f -&gt; f.filter(customQuoteFilter.apply(new CustomQuoteFilter.Config())))
+.uri(&quot;lb://your-middleware-service&quot;))
+.route(&quot;create-other&quot;, r -&gt; r.path(&quot;/create/**&quot;)
+.filters(f -&gt; f.filter(customCreateFilter.apply(new CustomCreateFilter.Config())))
+.uri(&quot;lb://your-middleware-service&quot;))
+.build();
+}
+}
+With this setup, the CustomQuoteFilter will handle requests to the /create/quote/** path, and the
+CustomCreateFilter will handle other /create/** paths. The routes are configured in
+application.properties, and the custom filters are applied through the route definitions in the
+GatewayConfig class.
