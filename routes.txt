@@ -1,0 +1,103 @@
+To meet your requirements using `RestTemplate` for the producer API calls and `GatewayFilter` instead of a filter factory, you can create a custom `GatewayFilter` and configure it in your `RouteLocatorBuilder` setup. Here’s how you can do it:
+
+1. **Add Dependencies**: Ensure you have the necessary dependencies in your `pom.xml` file for Spring Cloud Gateway and Spring Web.
+
+    ```xml
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-gateway</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    ```
+
+2. **Create a Custom Gateway Filter**: Implement a custom filter to handle the sequence of API calls for the `create-quote` path using `RestTemplate`.
+
+    ```java
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.cloud.gateway.filter.GatewayFilter;
+    import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+    import org.springframework.http.HttpMethod;
+    import org.springframework.http.ResponseEntity;
+    import org.springframework.stereotype.Component;
+    import org.springframework.web.client.RestTemplate;
+    import org.springframework.web.server.ServerWebExchange;
+    import reactor.core.publisher.Mono;
+
+    @Component
+    public class CustomGatewayFilter implements GatewayFilter {
+
+        @Autowired
+        private RestTemplate restTemplate;
+
+        @Override
+        public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+            String initialEndpoint = "http://producer-api-url/initial-endpoint";
+            String secondEndpoint = "http://smart-api-url/second-endpoint";
+            String finalEndpoint = "http://producer-api-url/final-endpoint";
+
+            return Mono.fromCallable(() -> {
+                ResponseEntity<String> initialResponse = restTemplate.postForEntity(initialEndpoint, null, String.class);
+                return initialResponse.getBody();
+            }).flatMap(initialResponse -> {
+                ResponseEntity<String> secondResponse = restTemplate.postForEntity(secondEndpoint, initialResponse, String.class);
+                return Mono.just(secondResponse.getBody());
+            }).flatMap(secondResponse -> {
+                ResponseEntity<String> finalResponse = restTemplate.postForEntity(finalEndpoint, secondResponse, String.class);
+                return Mono.just(finalResponse.getBody());
+            }).flatMap(finalResponse -> {
+                exchange.getResponse().getHeaders().add("Content-Type", "application/json");
+                return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(finalResponse.getBytes())));
+            });
+        }
+    }
+    ```
+
+3. **Register the Custom Filter and Routes**: Configure the routes and apply the custom filter using `RouteLocatorBuilder`.
+
+    ```java
+    import org.springframework.cloud.gateway.route.RouteLocator;
+    import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.context.annotation.Configuration;
+
+    @Configuration
+    public class GatewayConfig {
+
+        @Autowired
+        private CustomGatewayFilter customGatewayFilter;
+
+        @Bean
+        public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+            return builder.routes()
+                    .route("base-path-redirection", r -> r.path("/old-base-path/**")
+                            .filters(f -> f.rewritePath("/old-base-path/(?<segment>.*)", "/new-base-path/${segment}"))
+                            .uri("http://new-base-path-url"))
+                    .route("create-quote-route", r -> r.path("/create-quote")
+                            .filters(f -> f.filter(customGatewayFilter))
+                            .uri("http://producer-api-url"))
+                    .build();
+        }
+    }
+    ```
+
+4. **Configure RestTemplate**: Define a `RestTemplate` bean if not already done.
+
+    ```java
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.context.annotation.Configuration;
+    import org.springframework.web.client.RestTemplate;
+
+    @Configuration
+    public class RestTemplateConfig {
+
+        @Bean
+        public RestTemplate restTemplate() {
+            return new RestTemplate();
+        }
+    }
+    ```
+
+With these steps, you set up your Spring Boot gateway application to redirect base paths and handle the sequence of API calls for the `create-quote` route using a custom `GatewayFilter` and `RestTemplate`.
