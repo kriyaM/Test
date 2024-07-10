@@ -1,1 +1,87 @@
-  
+  In a Spring Boot reactive application, you can modify the request body using ServerHttpRequestDecorator and DataBuffer. Below is an example of how you can achieve this in a Spring Boot reactive application using WebFlux:
+
+	1.	Create a custom filter.
+	2.	Read the request body.
+	3.	Modify the request body.
+	4.	Create a new ServerHttpRequest with the modified body.
+
+Here is an example implementation:
+
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.nio.charset.StandardCharsets;
+
+@Component
+public class ModifyRequestBodyFilter extends AbstractGatewayFilterFactory<ModifyRequestBodyFilter.Config> {
+
+    public ModifyRequestBodyFilter() {
+        super(Config.class);
+    }
+
+    @Override
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest();
+
+            return DataBufferUtils.join(request.getBody())
+                    .flatMap(dataBuffer -> {
+                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                        dataBuffer.read(bytes);
+                        DataBufferUtils.release(dataBuffer);
+
+                        String body = new String(bytes, StandardCharsets.UTF_8);
+                        // Modify the body here
+                        String modifiedBody = body.replace("original", "modified");
+
+                        byte[] modifiedBytes = modifiedBody.getBytes(StandardCharsets.UTF_8);
+                        Flux<DataBuffer> modifiedBodyFlux = Flux.just(exchange.getResponse()
+                                .bufferFactory()
+                                .wrap(modifiedBytes));
+
+                        ServerHttpRequest modifiedRequest = new ServerHttpRequestDecorator(request) {
+                            @Override
+                            public Flux<DataBuffer> getBody() {
+                                return modifiedBodyFlux;
+                            }
+
+                            @Override
+                            public HttpHeaders getHeaders() {
+                                HttpHeaders httpHeaders = new HttpHeaders();
+                                httpHeaders.putAll(super.getHeaders());
+                                httpHeaders.setContentLength(modifiedBytes.length);
+                                httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                                return httpHeaders;
+                            }
+                        };
+
+                        return chain.filter(exchange.mutate().request(modifiedRequest).build());
+                    });
+        };
+    }
+
+    public static class Config {
+        // Put configuration properties here
+    }
+}
+
+Explanation:
+
+	1.	Create a custom filter: The filter class ModifyRequestBodyFilter extends AbstractGatewayFilterFactory.
+	2.	Read the request body: The DataBufferUtils.join(request.getBody()) method is used to read the request body into a single DataBuffer.
+	3.	Modify the request body: Convert the DataBuffer to a string, modify it, and then convert it back to a byte array.
+	4.	Create a new ServerHttpRequest: The ServerHttpRequestDecorator wraps the original request and provides the modified body and headers.
+	5.	Pass the modified request: The exchange.mutate().request(modifiedRequest).build() method passes the modified request to the next filter in the chain.
+
+This filter can be registered in the application properties or configuration to be applied to specific routes as needed.
