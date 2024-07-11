@@ -1,0 +1,117 @@
+In the provided setup, the WebClient calls will consider any non-2xx HTTP status codes as errors by default. However, you might want to explicitly handle different status codes and implement custom error handling logic. Here’s how you can do that:
+
+### Custom Error Handling with WebClient
+
+You can use the `onStatus` method to handle different HTTP status codes in your WebClient calls. This allows you to specify custom error handling logic for each API call.
+
+#### CustomFilter.java with Error Handling
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+@Component
+public class CustomFilter extends AbstractGatewayFilterFactory<CustomFilter.Config> {
+
+    @Autowired
+    private WebClient.Builder webClientBuilder;
+
+    public CustomFilter() {
+        super(Config.class);
+    }
+
+    public static class Config {
+        // Configuration properties for the filter
+    }
+
+    @Override
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> {
+            return makeFirstApiCall(exchange)
+                    .flatMap(firstApiResponse -> makeSecondApiCall(exchange, firstApiResponse))
+                    .flatMap(secondApiResponse -> makeThirdApiCall(exchange, secondApiResponse))
+                    .flatMap(finalResponse -> {
+                        // Process the final response if necessary
+                        return chain.filter(exchange);
+                    })
+                    .onErrorResume(WebClientResponseException.class, ex -> {
+                        // Handle error responses here
+                        exchange.getResponse().setStatusCode(HttpStatus.BAD_GATEWAY);
+                        return exchange.getResponse().setComplete();
+                    });
+        };
+    }
+
+    private Mono<String> makeFirstApiCall(ServerWebExchange exchange) {
+        return webClientBuilder.build()
+                .get()
+                .uri("http://api1/endpoint")
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new WebClientResponseException(
+                        "Error response from first API call",
+                        response.rawStatusCode(),
+                        response.statusCode().getReasonPhrase(),
+                        response.headers().asHttpHeaders(),
+                        null,
+                        null
+                    ));
+                })
+                .bodyToMono(String.class);
+    }
+
+    private Mono<String> makeSecondApiCall(ServerWebExchange exchange, String firstApiResponse) {
+        return webClientBuilder.build()
+                .post()
+                .uri("http://api2/endpoint")
+                .bodyValue(firstApiResponse)
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new WebClientResponseException(
+                        "Error response from second API call",
+                        response.rawStatusCode(),
+                        response.statusCode().getReasonPhrase(),
+                        response.headers().asHttpHeaders(),
+                        null,
+                        null
+                    ));
+                })
+                .bodyToMono(String.class);
+    }
+
+    private Mono<String> makeThirdApiCall(ServerWebExchange exchange, String secondApiResponse) {
+        return webClientBuilder.build()
+                .put()
+                .uri("http://api3/endpoint")
+                .bodyValue(secondApiResponse)
+                .retrieve()
+                .onStatus(HttpStatus::isError, response -> {
+                    return Mono.error(new WebClientResponseException(
+                        "Error response from third API call",
+                        response.rawStatusCode(),
+                        response.statusCode().getReasonPhrase(),
+                        response.headers().asHttpHeaders(),
+                        null,
+                        null
+                    ));
+                })
+                .bodyToMono(String.class);
+    }
+}
+```
+
+### Explanation
+1. **onStatus**: For each API call, use the `onStatus` method to check if the response status code indicates an error. If an error status code is detected, create a `WebClientResponseException` with the relevant details.
+2. **onErrorResume**: Add an error handler to the main chain to handle any `WebClientResponseException` instances. In this example, if an error occurs, the response status is set to `502 Bad Gateway`, and the response is completed.
+
+This approach ensures that any non-2xx HTTP status codes are correctly handled as errors, and you can provide custom error handling logic for each API call.
