@@ -1,0 +1,109 @@
+To handle this requirement in a Spring Boot gateway application using `application.properties`, `gateway filters`, and `RouteLocatorBuilder`, you can configure the routes and filters directly. Below is a step-by-step guide to achieve this.
+
+1. **Add Dependencies**: Ensure you have the necessary dependencies in your `pom.xml` file for Spring Cloud Gateway.
+
+    ```xml
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-gateway</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+    ```
+
+2. **Configure Routes in `application.properties`**: Define the base path redirection and the route for the create quote path.
+
+    ```properties
+    spring.cloud.gateway.routes[0].id=base-path-redirection
+    spring.cloud.gateway.routes[0].uri=http://new-base-path-url
+    spring.cloud.gateway.routes[0].predicates[0]=Path=/old-base-path/**
+    spring.cloud.gateway.routes[0].filters[0]=RewritePath=/old-base-path/(?<segment>.*), /new-base-path/${segment}
+
+    spring.cloud.gateway.routes[1].id=create-quote-route
+    spring.cloud.gateway.routes[1].uri=http://producer-api-url
+    spring.cloud.gateway.routes[1].predicates[0]=Path=/create-quote
+    spring.cloud.gateway.routes[1].filters[0]=MyCustomFilter
+    ```
+
+3. **Create a Custom Filter**: Implement a custom filter to handle the sequence of API calls for the `create-quote` path.
+
+    ```java
+    import org.springframework.cloud.gateway.filter.GatewayFilter;
+    import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+    import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+    import org.springframework.http.HttpMethod;
+    import org.springframework.stereotype.Component;
+    import org.springframework.web.reactive.function.client.WebClient;
+    import org.springframework.web.server.ServerWebExchange;
+    import reactor.core.publisher.Mono;
+
+    @Component
+    public class MyCustomFilter extends AbstractGatewayFilterFactory<MyCustomFilter.Config> {
+
+        private final WebClient webClient;
+
+        public MyCustomFilter(WebClient.Builder webClientBuilder) {
+            super(Config.class);
+            this.webClient = webClientBuilder.build();
+        }
+
+        @Override
+        public GatewayFilter apply(Config config) {
+            return (exchange, chain) -> {
+                return webClient.method(HttpMethod.POST)
+                        .uri("http://producer-api-url/initial-endpoint")
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .flatMap(initialResponse -> {
+                            return webClient.method(HttpMethod.POST)
+                                    .uri("http://smart-api-url/second-endpoint")
+                                    .bodyValue(initialResponse)
+                                    .retrieve()
+                                    .bodyToMono(String.class);
+                        })
+                        .flatMap(secondResponse -> {
+                            return webClient.method(HttpMethod.POST)
+                                    .uri("http://producer-api-url/final-endpoint")
+                                    .bodyValue(secondResponse)
+                                    .retrieve()
+                                    .bodyToMono(String.class);
+                        })
+                        .flatMap(finalResponse -> {
+                            exchange.getResponse().getHeaders().add("Content-Type", "application/json");
+                            return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(finalResponse.getBytes())));
+                        });
+            };
+        }
+
+        public static class Config {
+            // Put the configuration properties for your filter here
+        }
+    }
+    ```
+
+4. **Configure the Custom Filter in `application.properties`**:
+
+    ```properties
+    spring.cloud.gateway.routes[1].filters[0].name=MyCustomFilter
+    ```
+
+5. **Setup WebClient**: Configure a `WebClient` bean if not already done.
+
+    ```java
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.context.annotation.Configuration;
+    import org.springframework.web.reactive.function.client.WebClient;
+
+    @Configuration
+    public class WebClientConfig {
+
+        @Bean
+        public WebClient.Builder webClientBuilder() {
+            return WebClient.builder();
+        }
+    }
+    ```
+
+By following these steps, you can configure your Spring Boot gateway application to redirect base paths and handle the sequence of API calls for the `create-quote` route using a custom filter.
