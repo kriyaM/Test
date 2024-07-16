@@ -1,0 +1,134 @@
+To write unit tests for the custom `GatewayFilter` in your Spring Cloud Gateway application, you'll need to use the `WebTestClient` to simulate HTTP requests and validate the behavior of your filter. Here's an example of how to set up and write unit tests for the custom `GatewayFilter`.
+
+### Unit Test Setup
+
+1. **Dependencies**: Ensure you have the necessary dependencies in your `pom.xml` or `build.gradle`.
+
+```xml
+<!-- Add these dependencies to your pom.xml -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-gateway</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+```
+
+2. **Test Configuration**: Configure your test to load the gateway application context and register the custom filter.
+
+### Example Unit Test
+
+```java
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
+
+import static org.mockito.Mockito.when;
+
+@ExtendWith(SpringExtension.class)
+@WebFluxTest
+public class CustomGatewayFilterTest {
+
+    @Autowired
+    private WebTestClient webTestClient;
+
+    @MockBean
+    private WebClient.Builder webClientBuilder;
+
+    private WebClient webClient;
+
+    @BeforeEach
+    public void setUp() {
+        webClient = WebClient.builder().build();
+        when(webClientBuilder.build()).thenReturn(webClient);
+    }
+
+    @Test
+    public void testCustomGatewayFilter() {
+        // Mock the responses for WebClient calls
+        when(webClient.method(HttpMethod.GET)
+                .uri("http://producer-api/createQuote/{id}", "1")
+                .retrieve()
+                .bodyToMono(String.class))
+                .thenReturn(Mono.just("response1"));
+
+        when(webClient.method(HttpMethod.POST)
+                .uri("http://smart-api/performAction")
+                .bodyValue("response1")
+                .retrieve()
+                .bodyToMono(String.class))
+                .thenReturn(Mono.just("response2"));
+
+        // Perform a GET request to the test route
+        webTestClient.get().uri("/api/v1/createQuote/1")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .isEqualTo("response2");
+    }
+
+    @Configuration
+    static class TestConfig {
+
+        @Bean
+        public RouteLocator testRouteLocator(RouteLocatorBuilder builder, CustomGatewayFilter customGatewayFilter) {
+            return builder.routes()
+                    .route("create_quote_route", r -> r.path("/api/v1/createQuote/**")
+                            .filters(f -> f.filter(customGatewayFilter))
+                            .uri("http://producer-api/finalizeQuote"))
+                    .build();
+        }
+
+        @Bean
+        public CustomGatewayFilter customGatewayFilter(WebClient.Builder webClientBuilder) {
+            return new CustomGatewayFilter(webClientBuilder);
+        }
+
+        @Bean
+        public WebClient.Builder webClientBuilder() {
+            return WebClient.builder();
+        }
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: Use `@ExtendWith(SpringExtension.class)` and `@WebFluxTest` to load the Spring WebFlux test context. The `@MockBean` annotation is used to mock the `WebClient.Builder`.
+
+2. **Mock Responses**: Mock the responses for `WebClient` calls using `when` and `thenReturn`. This ensures the filter logic can be tested without making actual HTTP requests.
+
+3. **Test Method**: The `testCustomGatewayFilter` method performs a simulated `GET` request to the test route and validates the response.
+
+4. **Test Configuration**:
+   - `TestConfig` defines the test-specific configuration, including the route locator and the custom gateway filter.
+   - Beans for the custom filter and `WebClient.Builder` are registered.
+
+### Summary:
+
+- **WebTestClient**: Used to simulate HTTP requests and validate responses.
+- **Mocking**: Use Mockito to mock `WebClient` responses.
+- **Configuration**: Define a test-specific configuration to load the necessary beans and routes.
+
+This setup provides a comprehensive approach to unit testing the custom `GatewayFilter` in a Spring Cloud Gateway application. Adjust the test cases and configurations based on your specific requirements and application context.
