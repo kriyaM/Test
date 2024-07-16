@@ -1,4 +1,4 @@
-import org.springframework.cloud.gateway.filter.GatewayFilter;
+hi import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -48,3 +48,23 @@ public class CustomSequentialGatewayFilter implements GatewayFilter {
                 });
     }
 }
+
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Configuration
+public class GatewayConfig {
+
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder();
+    }
+
+    @Bean
+    public CustomSequentialGatewayFilter customSequentialGatewayFilter(WebClient.Builder webClientBuilder) {
+        return new CustomSequentialGatewayFilter(webClientBuilder);
+    }
+}
+
