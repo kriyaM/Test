@@ -1,0 +1,271 @@
+Let's adjust the DTO classes and the filter to accommodate `Identifier` having `source` and `value` fields. We'll also ensure that only unique identifiers (based on both `source` and `value`) result in API calls.
+
+### Custom DTO
+
+First, define a DTO that reflects this updated structure.
+
+```java
+import java.util.Map;
+
+public class CustomDto {
+    private Entity firm;
+    private Entity ga;
+    private Entity performer;
+    private Entity submitter;
+    private Map<String, Object> privilege;
+
+    // Getters and Setters
+
+    public Entity getFirm() {
+        return firm;
+    }
+
+    public void setFirm(Entity firm) {
+        this.firm = firm;
+    }
+
+    public Entity getGa() {
+        return ga;
+    }
+
+    public void setGa(Entity ga) {
+        this.ga = ga;
+    }
+
+    public Entity getPerformer() {
+        return performer;
+    }
+
+    public void setPerformer(Entity performer) {
+        this.performer = performer;
+    }
+
+    public Entity getSubmitter() {
+        return submitter;
+    }
+
+    public void setSubmitter(Entity submitter) {
+        this.submitter = submitter;
+    }
+
+    public Map<String, Object> getPrivilege() {
+        return privilege;
+    }
+
+    public void setPrivilege(Map<String, Object> privilege) {
+        this.privilege = privilege;
+    }
+}
+
+class Entity {
+    private Identifier identifier;
+    private Map<String, Object> profile;
+
+    // Getters and Setters
+
+    public Identifier getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(Identifier identifier) {
+        this.identifier = identifier;
+    }
+
+    public Map<String, Object> getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Map<String, Object> profile) {
+        this.profile = profile;
+    }
+}
+
+class Identifier {
+    private String source;
+    private String value;
+
+    // Getters and Setters
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public int hashCode() {
+        return source.hashCode() * 31 + value.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Identifier that = (Identifier) obj;
+        return source.equals(that.source) && value.equals(that.value);
+    }
+}
+```
+
+### Updated FetchQuoteRouteFilter
+
+Now, update the `FetchQuoteRouteFilter` to handle the DTO with identifiers containing `source` and `value`.
+
+```java
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+@Component
+public class FetchQuoteRouteFilter implements GatewayFilter {
+
+    private final WebClient webClient;
+    private final ObjectMapper objectMapper;
+
+    public FetchQuoteRouteFilter(WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder.build();
+        this.objectMapper = new ObjectMapper();
+    }
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String originalRequestUri = exchange.getRequest().getURI().toString();
+
+        return webClient.get()
+                .uri(originalRequestUri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .flatMap(responseBody -> {
+                    // Process the response and make multiple API calls to the producer API
+                    return updateResponse(responseBody);
+                })
+                .flatMap(updatedResponse -> {
+                    // Create a new DataBuffer from the updated response
+                    byte[] bytes = updatedResponse.getBytes(StandardCharsets.UTF_8);
+                    DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
+
+                    // Set the modified response as the request body for the next filter
+                    exchange.getAttributes().put("updatedResponse", updatedResponse);
+
+                    return chain.filter(exchange.mutate().request(exchange.getRequest().mutate()
+                            .headers(httpHeaders -> httpHeaders.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(bytes.length)))
+                            .build()).build()).then(Mono.defer(() -> {
+                        // Write the modified response to the response body
+                        exchange.getResponse().writeWith(Flux.just(buffer));
+                    }));
+                });
+    }
+
+    private Mono<String> updateResponse(String responseBody) {
+        try {
+            CustomDto customDto = objectMapper.readValue(responseBody, CustomDto.class);
+            Map<Identifier, Mono<Map<String, Object>>> profileCalls = new HashMap<>();
+            Set<Identifier> uniqueIdentifiers = new HashSet<>();
+
+            // Collect calls to PD profile API for each unique identifier
+            collectProfileCalls(customDto, profileCalls, uniqueIdentifiers);
+
+            // Execute all profile API calls
+            return Mono.zip(profileCalls.values(), results -> {
+                int index = 0;
+                for (Identifier key : profileCalls.keySet()) {
+                    Map<String, Object> profile = (Map<String, Object>) results[index++];
+                    updateProfile(customDto, key, profile);
+                }
+                return customDto;
+            }).flatMap(updatedDto -> {
+                // Call PD privilege API
+                return callPrivilegeApi(updatedDto)
+                        .flatMap(privilegeResponse -> {
+                            updatedDto.setPrivilege(privilegeResponse);
+                            return Mono.just(objectMapper.writeValueAsString(updatedDto));
+                        });
+            });
+
+        } catch (Exception e) {
+            return Mono.error(e);
+        }
+    }
+
+    private void collectProfileCalls(CustomDto customDto, Map<Identifier, Mono<Map<String, Object>>> profileCalls, Set<Identifier> uniqueIdentifiers) {
+        addProfileCall(customDto.getFirm(), profileCalls, uniqueIdentifiers);
+        addProfileCall(customDto.getGa(), profileCalls, uniqueIdentifiers);
+        addProfileCall(customDto.getPerformer(), profileCalls, uniqueIdentifiers);
+        addProfileCall(customDto.getSubmitter(), profileCalls, uniqueIdentifiers);
+    }
+
+    private void addProfileCall(Entity entity, Map<Identifier, Mono<Map<String, Object>>> profileCalls, Set<Identifier> uniqueIdentifiers) {
+        if (entity != null && entity.getIdentifier() != null && uniqueIdentifiers.add(entity.getIdentifier())) {
+            profileCalls.put(entity.getIdentifier(), callProfileApi(entity.getIdentifier()));
+        }
+    }
+
+    private void updateProfile(CustomDto customDto, Identifier identifier, Map<String, Object> profile) {
+        if (customDto.getFirm() != null && identifier.equals(customDto.getFirm().getIdentifier())) {
+            customDto.getFirm().setProfile(profile);
+        }
+        if (customDto.getGa() != null && identifier.equals(customDto.getGa().getIdentifier())) {
+            customDto.getGa().setProfile(profile);
+        }
+        if (customDto.getPerformer() != null && identifier.equals(customDto.getPerformer().getIdentifier())) {
+            customDto.getPerformer().setProfile(profile);
+        }
+        if (customDto.getSubmitter() != null && identifier.equals(customDto.getSubmitter().getIdentifier())) {
+            customDto.getSubmitter().setProfile(profile);
+        }
+    }
+
+    private Mono<Map<String, Object>> callProfileApi(Identifier identifier) {
+        return webClient.get()
+                .uri("http://pd-profile-api-url", uriBuilder -> uriBuilder
+                        .queryParam("source", identifier.getSource())
+                        .queryParam("value", identifier.getValue())
+                        .build())
+                .retrieve()
+                .bodyToMono(Map.class);
+    }
+
+    private Mono<Map<String, Object>> callPrivilegeApi(CustomDto updatedDto) {
+        return webClient.post()
+                .uri("http://pd-privilege-api-url")
+                .bodyValue(updatedDto)
+                .retrieve()
+                .bodyToMono(Map.class);
+    }
+}
+```
+
+### Explanation:
+
+1. **Identifier Class**: Contains `source` and `value` fields. The `hashCode` and `equals` methods are overridden to ensure that identifiers are unique based on both fields.
+2. **updateResponse**: Maps the JSON response to a `CustomDto` object and performs the necessary API calls to update the profiles and privileges.
+3. **collectProfileCalls**: Collects calls to the profile API for each unique identifier.
+4. **addProfileCall**: Adds a profile call for an entity if its identifier is unique.
+5. **updateProfile**: Updates the profiles in the `CustomDto` object with the results from the profile API calls.
+6. **callProfileApi**: Makes a GET request to the profile API using both `source` and `value` as query parameters and expects a response in `Map<String, Object>` format.
+7. **callPrivilegeApi**: Makes a POST request to the privilege API with the updated `CustomDto` object and expects a response in `Map<String, Object>` format.
+
+This setup ensures that only unique identifiers (based on both `source` and `value`) result in API calls and updates the profiles accordingly in the `CustomDto` object.
