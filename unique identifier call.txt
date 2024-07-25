@@ -1,0 +1,131 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+@Component
+public class FetchQuoteRouteFilter implements GatewayFilter {
+
+    private final WebClient webClient;
+    private final ObjectMapper objectMapper;
+
+    public FetchQuoteRouteFilter(WebClient.Builder webClientBuilder) {
+        this.webClient = webClientBuilder.build();
+        this.objectMapper = new ObjectMapper();
+    }
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String originalRequestUri = exchange.getRequest().getURI().toString();
+
+        return webClient.get()
+                .uri(originalRequestUri)
+                .retrieve()
+                .bodyToMono(String.class)
+                .flatMap(responseBody -> {
+                    // Process the response and make multiple API calls to the producer API
+                    return updateResponse(responseBody);
+                })
+                .flatMap(updatedResponse -> {
+                    // Create a new DataBuffer from the updated response
+                    byte[] bytes = updatedResponse.getBytes(StandardCharsets.UTF_8);
+                    DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
+
+                    // Set the modified response as the request body for the next filter
+                    exchange.getAttributes().put("updatedResponse", updatedResponse);
+
+                    return chain.filter(exchange.mutate().request(exchange.getRequest().mutate()
+                            .headers(httpHeaders -> httpHeaders.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(bytes.length)))
+                            .build()).build()).then(Mono.defer(() -> {
+                        // Write the modified response to the response body
+                        exchange.getResponse().writeWith(Flux.just(buffer));
+                    }));
+                });
+    }
+
+    private Mono<String> updateResponse(String responseBody) {
+        try {
+            CustomDto customDto = objectMapper.readValue(responseBody, CustomDto.class);
+            Map<String, Mono<Map<String, Object>>> profileCalls = new HashMap<>();
+            Set<String> uniqueIdentifiers = new HashSet<>();
+
+            // Collect calls to PD profile API for each unique identifier
+            collectProfileCalls(customDto, profileCalls, uniqueIdentifiers);
+
+            // Execute all profile API calls
+            return Mono.zip(profileCalls.values(), results -> {
+                int index = 0;
+                for (String key : profileCalls.keySet()) {
+                    Map<String, Object> profile = (Map<String, Object>) results[index++];
+                    updateProfile(customDto, key, profile);
+                }
+                return customDto;
+            }).flatMap(updatedDto -> {
+                // Call PD privilege API
+                return callPrivilegeApi(updatedDto)
+                        .flatMap(privilegeResponse -> {
+                            updatedDto.setPrivilege(privilegeResponse);
+                            return Mono.just(objectMapper.writeValueAsString(updatedDto));
+                        });
+            });
+
+        } catch (Exception e) {
+            return Mono.error(e);
+        }
+    }
+
+    private void collectProfileCalls(CustomDto customDto, Map<String, Mono<Map<String, Object>>> profileCalls, Set<String> uniqueIdentifiers) {
+        addProfileCall(customDto.getFirm(), profileCalls, uniqueIdentifiers);
+        addProfileCall(customDto.getGa(), profileCalls, uniqueIdentifiers);
+        addProfileCall(customDto.getPerformer(), profileCalls, uniqueIdentifiers);
+        addProfileCall(customDto.getSubmitter(), profileCalls, uniqueIdentifiers);
+    }
+
+    private void addProfileCall(Entity entity, Map<String, Mono<Map<String, Object>>> profileCalls, Set<String> uniqueIdentifiers) {
+        if (entity != null && entity.getIdentifier() != null && uniqueIdentifiers.add(entity.getIdentifier().getId())) {
+            profileCalls.put(entity.getIdentifier().getId(), callProfileApi(entity.getIdentifier().getId()));
+        }
+    }
+
+    private void updateProfile(CustomDto customDto, String identifier, Map<String, Object> profile) {
+        if (customDto.getFirm() != null && identifier.equals(customDto.getFirm().getIdentifier().getId())) {
+            customDto.getFirm().setProfile(profile);
+        }
+        if (customDto.getGa() != null && identifier.equals(customDto.getGa().getIdentifier().getId())) {
+            customDto.getGa().setProfile(profile);
+        }
+        if (customDto.getPerformer() != null && identifier.equals(customDto.getPerformer().getIdentifier().getId())) {
+            customDto.getPerformer().setProfile(profile);
+        }
+        if (customDto.getSubmitter() != null && identifier.equals(customDto.getSubmitter().getIdentifier().getId())) {
+            customDto.getSubmitter().setProfile(profile);
+        }
+    }
+
+    private Mono<Map<String, Object>> callProfileApi(String profileValue) {
+        return webClient.get()
+                .uri("http://pd-profile-api-url", uriBuilder -> uriBuilder.queryParam("value", profileValue).build())
+                .retrieve()
+                .bodyToMono(Map.class);
+    }
+
+    private Mono<Map<String, Object>> callPrivilegeApi(CustomDto updatedDto) {
+        return webClient.post()
+                .uri("http://pd-privilege-api-url")
+                .bodyValue(updatedDto)
+                .retrieve()
+                .bodyToMono(Map.class);
+    }
+}
