@@ -1,0 +1,15 @@
+return Flux.fromIterable(profileCalls.entrySet())
+                    .flatMap(entry -> entry.getValue().map(profile -> Map.entry(entry.getKey(), profile)))
+                    .collectMap(Map.Entry::getKey, Map.Entry::getValue)
+                    .flatMap(profiles -> {
+                        profiles.forEach((identifier, profile) -> updateProfile(customDto, identifier, profile));
+                        return callPrivilegeApi(customDto);
+                    })
+                    .flatMap(privilegeResponse -> {
+                        customDto.setPrivilege(privilegeResponse);
+                        return Mono.just(objectMapper.writeValueAsString(customDto));
+                    });
+
+        } catch (Exception e) {
+            return Mono.error(e);
+        }
