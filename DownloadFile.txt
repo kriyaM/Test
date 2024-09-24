@@ -1,0 +1,45 @@
+Step 1
+
+First of all, create one method "DownloadDocument" and pass arguments as FilePath like,
+
+async DownloadDocument(fileDownloadPath: string) {
+    this.fileUrl = fileDownloadPath; //"wwwroot/SiteDocument/SiteDemo1/FileDocument.doc" static file path
+    this.siteDocumentUploadService.DocumentsDownload(this.fileUrl).subscribe(async (event) => {
+        let data = event as HttpResponse < Blob > ;
+        const downloadedFile = new Blob([data.body as BlobPart], {
+            type: data.body?.type
+        });
+        console.log("ddd", downloadedFile)
+        if (downloadedFile.type != "") {
+            const a = document.createElement('a');
+            a.setAttribute('style', 'display:none;');
+            document.body.appendChild(a);
+            a.download = this.fileUrl;
+            a.href = URL.createObjectURL(downloadedFile);
+            a.target = '_blank';
+            a.click();
+            document.body.removeChild(a);
+        }
+    });
+}
+
+
+Note: File download folder path start with wwwroot and then rest inside folder for example.
+
+FirstFolder is SiteDocument Child Folder is SiteName SiteDemo1 and then FileName so path will be like,
+
+: wwwroot/SiteDocument/SiteDemo1/FileDocument.doc // Document
+: wwwroot/SiteDocument/SiteDemo1/FileExcel.xls // Excel
+: wwwroot/SiteDocument/SiteDemo1/FilePDF.pdf // Pdf
+Step 2
+
+For calling service DocumentDownload Function, call server API Like,
+
+
+DocumentsDownload(fileUrl: string) {
+    return this.http.get(`${environment.apiUrl}` + this.getSiteDocumentsUrl + "/DocumentsDownload?fileUrl=" + fileUrl, {
+        reportProgress: true,
+        observe: 'events',
+        responseType: 'blob'
+    });
+}
