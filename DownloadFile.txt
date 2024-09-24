@@ -43,3 +43,19 @@ DocumentsDownload(fileUrl: string) {
         responseType: 'blob'
     });
 }
+
+
+
+
+DownloadDocument() {
+    this.downloadFile().subscribe(async (event) => {
+      let data = event as HttpResponse<Blob>;
+      const downloadedFile = new Blob([data.body as BlobPart], {
+        type: data.body?.type
+      });
+      console.log("ddd", downloadedFile);
+      if (downloadedFile.type !== "") {
+        saveAs(downloadedFile, 'downloaded_file');
+      }
+    });
+  }
