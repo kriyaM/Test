@@ -1,0 +1,33 @@
+import org.springframework.stereotype.Service;
+
+@Service
+public class AzureFileService {
+
+    // Other methods...
+
+    public String getMimeType(String fileName) {
+        // Get MIME type based on file extension
+        String extension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+        
+        switch (extension) {
+            case "pdf":
+                return "application/pdf";
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "txt":
+                return "text/plain";
+            case "doc":
+            case "docx":
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case "xls":
+            case "xlsx":
+                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            // Add more file types as needed
+            default:
+                return "application/octet-stream"; // Fallback for unknown types
+        }
+    }
+}
