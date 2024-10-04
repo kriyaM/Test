@@ -1,0 +1,99 @@
+To connect to Azure Blob Storage using Spring Boot with WebFlux (reactive framework) and create APIs for file upload and download, follow these steps:
+
+	1.	Add the necessary dependencies: You will need the Azure Storage Blob SDK, WebFlux, and Spring Boot dependencies in your pom.xml or build.gradle.
+
+<dependency>
+    <groupId>com.azure</groupId>
+    <artifactId>azure-storage-blob</artifactId>
+    <version>12.14.0</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+
+	2.	Configure Azure Blob storage connection: Add the required configurations like connection string or credentials in your application.properties or application.yml.
+
+azure.storage.connection-string=DefaultEndpointsProtocol=https;AccountName=your-account;AccountKey=your-key;EndpointSuffix=core.windows.net
+
+	3.	Service to interact with Blob Storage: Create a service class that will handle the file upload and download operations using the Azure Blob SDK.
+
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobContainerClientBuilder;
+import com.azure.storage.blob.BlobClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+@Service
+public class BlobStorageService {
+
+    private final BlobContainerClient containerClient;
+
+    public BlobStorageService(@Value("${azure.storage.connection-string}") String connectionString,
+                              @Value("${azure.storage.container-name}") String containerName) {
+        this.containerClient = new BlobContainerClientBuilder()
+                .connectionString(connectionString)
+                .containerName(containerName)
+                .buildClient();
+    }
+
+    public Mono<Void> uploadFile(String fileName, byte[] content) {
+        BlobClient blobClient = containerClient.getBlobClient(fileName);
+        InputStream inputStream = new ByteArrayInputStream(content);
+        blobClient.upload(inputStream, content.length, true);
+        return Mono.empty(); // Wrap in Mono for reactive return
+    }
+
+    public Mono<byte[]> downloadFile(String fileName) {
+        BlobClient blobClient = containerClient.getBlobClient(fileName);
+        return Mono.fromCallable(() -> blobClient.downloadContent().toBytes());
+    }
+}
+
+	4.	Controller to handle file upload and download: Create a WebFlux controller that defines the APIs.
+
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/api/files")
+public class FileController {
+
+    private final BlobStorageService blobStorageService;
+
+    public FileController(BlobStorageService blobStorageService) {
+        this.blobStorageService = blobStorageService;
+    }
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<Void> uploadFile(@RequestPart("file") Mono<FilePart> filePartMono) {
+        return filePartMono.flatMap(filePart -> filePart.content()
+                .collectList()
+                .flatMap(dataBufferList -> {
+                    byte[] fileContent = dataBufferList.stream()
+                            .reduce((buffer1, buffer2) -> buffer1.write(buffer2.asByteBuffer().array()))
+                            .map(buffer -> buffer.asByteBuffer().array())
+                            .orElse(new byte[0]);
+
+                    return blobStorageService.uploadFile(filePart.filename(), fileContent);
+                }));
+    }
+
+    @GetMapping("/download/{fileName}")
+    public Mono<byte[]> downloadFile(@PathVariable String fileName) {
+        return blobStorageService.downloadFile(fileName);
+    }
+}
+
+	5.	Test your API:
+	•	For upload, send a POST request with a file using the /upload endpoint.
+	•	For download, send a GET request to /download/{fileName} to retrieve the file as a byte array.
+
+With this setup, you should be able to upload and download files from an Azure Blob container in a reactive way using Spring WebFlux.
