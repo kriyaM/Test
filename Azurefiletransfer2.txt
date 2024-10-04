@@ -1,0 +1,142 @@
+To connect to Azure Blob Storage using client ID, client secret, tenant ID, and a specific container name instead of using a connection string, you will need to use Azure AD authentication via the DefaultAzureCredential class provided by Azure SDK. Here’s how you can modify the configuration and code to support that:
+
+1. Update Dependencies
+
+Ensure your pom.xml has the following dependencies:
+
+<dependency>
+    <groupId>com.azure</groupId>
+    <artifactId>azure-storage-blob</artifactId>
+    <version>12.14.0</version>
+</dependency>
+<dependency>
+    <groupId>com.azure</groupId>
+    <artifactId>azure-identity</artifactId>
+    <version>1.5.0</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+
+2. Update Configuration
+
+In application.properties or application.yml, define the following properties:
+
+azure.storage.account-name=your-account-name
+azure.storage.container-name=your-container-name
+azure.client-id=your-client-id
+azure.client-secret=your-client-secret
+azure.tenant-id=your-tenant-id
+azure.endpoint=https://your-account-name.blob.core.windows.net/
+
+3. Service Class Using Azure AD Credentials
+
+Modify the BlobStorageService to use Azure AD credentials with DefaultAzureCredential or ClientSecretCredential:
+
+import com.azure.identity.ClientSecretCredential;
+import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobContainerClientBuilder;
+import com.azure.storage.blob.models.BlobStorageException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+@Service
+public class BlobStorageService {
+
+    private final BlobContainerClient containerClient;
+
+    public BlobStorageService(@Value("${azure.storage.account-name}") String accountName,
+                              @Value("${azure.storage.container-name}") String containerName,
+                              @Value("${azure.client-id}") String clientId,
+                              @Value("${azure.client-secret}") String clientSecret,
+                              @Value("${azure.tenant-id}") String tenantId,
+                              @Value("${azure.endpoint}") String endpoint) {
+        
+        // Authenticate using ClientSecretCredential
+        ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
+                .clientId(clientId)
+                .clientSecret(clientSecret)
+                .tenantId(tenantId)
+                .build();
+        
+        // Create the container client using the credential
+        this.containerClient = new BlobContainerClientBuilder()
+                .endpoint(endpoint)
+                .credential(clientSecretCredential)
+                .containerName(containerName)
+                .buildClient();
+    }
+
+    public Mono<Void> uploadFile(String fileName, byte[] content) {
+        try {
+            BlobClient blobClient = containerClient.getBlobClient(fileName);
+            InputStream inputStream = new ByteArrayInputStream(content);
+            blobClient.upload(inputStream, content.length, true);
+            return Mono.empty(); // Reactive Mono return
+        } catch (BlobStorageException e) {
+            return Mono.error(e);
+        }
+    }
+
+    public Mono<byte[]> downloadFile(String fileName) {
+        try {
+            BlobClient blobClient = containerClient.getBlobClient(fileName);
+            return Mono.fromCallable(() -> blobClient.downloadContent().toBytes());
+        } catch (BlobStorageException e) {
+            return Mono.error(e);
+        }
+    }
+}
+
+4. Controller for Upload and Download
+
+The controller remains largely the same, using the BlobStorageService to handle upload and download requests.
+
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/api/files")
+public class FileController {
+
+    private final BlobStorageService blobStorageService;
+
+    public FileController(BlobStorageService blobStorageService) {
+        this.blobStorageService = blobStorageService;
+    }
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<Void> uploadFile(@RequestPart("file") Mono<FilePart> filePartMono) {
+        return filePartMono.flatMap(filePart -> filePart.content()
+                .collectList()
+                .flatMap(dataBufferList -> {
+                    byte[] fileContent = dataBufferList.stream()
+                            .reduce((buffer1, buffer2) -> buffer1.write(buffer2.asByteBuffer().array()))
+                            .map(buffer -> buffer.asByteBuffer().array())
+                            .orElse(new byte[0]);
+
+                    return blobStorageService.uploadFile(filePart.filename(), fileContent);
+                }));
+    }
+
+    @GetMapping("/download/{fileName}")
+    public Mono<byte[]> downloadFile(@PathVariable String fileName) {
+        return blobStorageService.downloadFile(fileName);
+    }
+}
+
+5. Run and Test
+
+	•	Upload API: Send a POST request with a file to /api/files/upload.
+	•	Download API: Send a GET request to /api/files/download/{fileName} to download the file.
+
+This setup now uses Azure AD credentials (client ID, secret, and tenant ID) to authenticate and connect to Azure Blob Storage using the ClientSecretCredential for secure, role-based access.
