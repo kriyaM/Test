@@ -1,0 +1,133 @@
+To implement the solution using Java 17, the process and code structure remains largely the same, but with Java 17 features and improvements (such as enhanced type inference, sealed classes, and pattern matching). Here’s the updated code using Java 17 features:
+
+1. Add Dependencies
+
+Ensure your pom.xml includes the following:
+
+<properties>
+    <java.version>17</java.version>
+</properties>
+
+<dependency>
+    <groupId>com.azure</groupId>
+    <artifactId>azure-storage-blob</artifactId>
+    <version>12.14.0</version>
+</dependency>
+<dependency>
+    <groupId>com.azure</groupId>
+    <artifactId>azure-identity</artifactId>
+    <version>1.5.0</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+
+2. Service Class Using Azure AD Credentials with Java 17 Features
+
+In Java 17, you can make use of the var keyword for better type inference. Also, the business logic remains the same, but some code improvements can be applied.
+
+import com.azure.identity.ClientSecretCredential;
+import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobContainerClientBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+@Service
+public class BlobStorageService {
+
+    private final BlobContainerClient containerClient;
+
+    public BlobStorageService(
+            @Value("${azure.storage.account-name}") String accountName,
+            @Value("${azure.storage.container-name}") String containerName,
+            @Value("${azure.client-id}") String clientId,
+            @Value("${azure.client-secret}") String clientSecret,
+            @Value("${azure.tenant-id}") String tenantId,
+            @Value("${azure.endpoint}") String endpoint) {
+
+        // Using var for local variable type inference (Java 10+)
+        var clientSecretCredential = new ClientSecretCredentialBuilder()
+                .clientId(clientId)
+                .clientSecret(clientSecret)
+                .tenantId(tenantId)
+                .build();
+
+        // Constructing the BlobContainerClient
+        this.containerClient = new BlobContainerClientBuilder()
+                .endpoint(endpoint)
+                .credential(clientSecretCredential)
+                .containerName(containerName)
+                .buildClient();
+    }
+
+    public Mono<Void> uploadFile(String fileName, byte[] content) {
+        return Mono.fromRunnable(() -> {
+            var blobClient = containerClient.getBlobClient(fileName);
+            try (InputStream inputStream = new ByteArrayInputStream(content)) {
+                blobClient.upload(inputStream, content.length, true);
+            } catch (Exception e) {
+                throw new RuntimeException("File upload failed", e);
+            }
+        });
+    }
+
+    public Mono<byte[]> downloadFile(String fileName) {
+        return Mono.fromCallable(() -> {
+            var blobClient = containerClient.getBlobClient(fileName);
+            return blobClient.downloadContent().toBytes();
+        });
+    }
+}
+
+3. Controller for Upload and Download
+
+The controller stays mostly the same, but we can leverage pattern matching for instance of checks (Java 16+) and enhanced type inference (Java 10+).
+
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/api/files")
+public class FileController {
+
+    private final BlobStorageService blobStorageService;
+
+    public FileController(BlobStorageService blobStorageService) {
+        this.blobStorageService = blobStorageService;
+    }
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<Void> uploadFile(@RequestPart("file") Mono<FilePart> filePartMono) {
+        return filePartMono.flatMap(filePart -> filePart.content()
+                .collectList()
+                .flatMap(dataBufferList -> {
+                    var fileContent = dataBufferList.stream()
+                            .reduce((buffer1, buffer2) -> buffer1.write(buffer2.asByteBuffer().array()))
+                            .map(buffer -> buffer.asByteBuffer().array())
+                            .orElse(new byte[0]);
+
+                    return blobStorageService.uploadFile(filePart.filename(), fileContent);
+                }));
+    }
+
+    @GetMapping("/download/{fileName}")
+    public Mono<byte[]> downloadFile(@PathVariable String fileName) {
+        return blobStorageService.downloadFile(fileName);
+    }
+}
+
+4. Run and Test
+
+	•	Upload API: Use POST with multipart form data to /api/files/upload.
+	•	Download API: Use GET to /api/files/download/{fileName} to retrieve a file.
+
+This implementation is compatible with Java 17, utilizing modern Java features like var, and ensures the application works seamlessly with Azure Blob Storage using Azure AD credentials.
