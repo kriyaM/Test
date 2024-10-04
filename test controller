@@ -1,1 +1,63 @@
- 
+@GetMapping(value = "/plansponsor")
+	public PlansponsorResponse getPlansponsorData(@RequestParam(required = true) String id, ServerHttpRequest request)
+			throws InterruptedException, ExecutionException, IOException {
+
+		log.info(" ******* Plansponsor Controller starts ******* ");
+
+		List<String> headersKey = request.getHeaders().get("authKey");
+
+		String authKey = null;
+		if (headersKey != null)
+			authKey = headersKey.get(0);
+
+		String ein = redirectUtil.encrypt(id);
+		log.info("******** ID value of "+id+" ->" + ein);
+		HttpHeaders headers = new HttpHeaders();
+		try {
+			LinkedMultiValueMap<String, String> userToken = middlewareService.getSAMLSSOAuthCodeSMWebBuilder(authKey,
+					null);
+			headers.addAll(userToken);
+		} catch (Exception e) {
+			log.error(e.getLocalizedMessage());
+			Thread.currentThread().interrupt();
+		}
+		Optional<JsonNode> plansponsor;
+		JsonNode plansponsorOrgResponse = builder.build().method(HttpMethod.GET)
+				.uri(t -> t.scheme("https").host(plansponsorHost).path("/healthcare/qapath1/v4/plansponsors")
+						.queryParam("id", ein).build())
+				.headers(t -> t.addAll(headers)).retrieve().onStatus(status -> !status.is2xxSuccessful(),
+						errorResponse -> errorResponse.bodyToMono((JsonNode.class)).flatMap(errorBody -> {
+							log.error("Exception from Plansponsor API " + errorBody);
+							throw new RoutingException("Failed to Fetch Plansponsor details "
+									+ errorBody.get("moreInformation").textValue());
+						}))
+				.bodyToMono(JsonNode.class).toFuture().get();
+
+		List<JsonNode> plansponsorList = StreamSupport.stream(plansponsorOrgResponse.path("psorganizationResponse")
+				.get("readpsorganizationResponse").get("plansponsor").spliterator(), false).toList();
+
+		if (!plansponsorList.isEmpty()) {
+
+			plansponsor = plansponsorList.stream()
+					.filter(d -> d.findValue(STATUSCODE).asText().equalsIgnoreCase(ACTIVE)).findAny();
+
+			if (plansponsor.isPresent()) {
+				return PlansponsorResponse.builder().ein(id).psuid(plansponsor.get().findValue(IDVALUE).asText())
+						.statusCode(ACTIVE).build();
+			} else {
+				plansponsor = plansponsorList.stream()
+						.filter(d -> d.findValue(STATUSCODE).asText().equalsIgnoreCase(TERMINATED)).findFirst();
+
+				if (plansponsor.isPresent()) {
+					return PlansponsorResponse.builder().ein(id).psuid(plansponsor.get().findValue(IDVALUE).asText())
+							.statusCode(TERMINATED).build();
+				}
+			}
+
+		}
+
+		log.info(" ******* Plansponsor Controller ends ******* ");
+
+		return PlansponsorResponse.builder().ein(id).psuid(null).statusCode("Records not found").build();
+
+	}
