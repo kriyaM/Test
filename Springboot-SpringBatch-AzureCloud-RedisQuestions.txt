@@ -1,0 +1,55 @@
+Here’s a detailed set of technical interview questions for evaluating a Java developer on Spring Boot, Spring Batch, Azure Cloud, and Redis. These questions aim to assess both conceptual understanding and practical experience.
+
+Spring Boot Questions
+
+	1.	What is Spring Boot and how does it simplify Spring application development?
+	2.	Explain how Spring Boot autoconfiguration works. How would you disable a specific autoconfiguration class?
+	3.	What are profiles in Spring Boot? How can you manage multiple environments (e.g., dev, staging, production) using profiles?
+	4.	How do you handle exception management in Spring Boot? Explain using @ControllerAdvice and @ExceptionHandler.
+	5.	What is the role of application.properties or application.yml in Spring Boot? How would you externalize configuration values?
+	6.	How do you secure a Spring Boot application using Spring Security? Give an example of a basic security configuration.
+	7.	Explain the difference between a @RestController and a @Controller in Spring Boot. When would you use one over the other?
+	8.	How does Spring Boot handle database configuration? What is DataSourceAutoConfiguration, and how can you override default database settings?
+	9.	What is Actuator in Spring Boot? Name a few endpoints provided by Spring Boot Actuator and explain their purpose.
+	10.	How would you implement asynchronous functionality in a Spring Boot application?
+
+Spring Batch Questions
+
+	1.	What is Spring Batch and when would you use it?
+	2.	Can you describe the architecture of Spring Batch? What are the key components of a batch job?
+	3.	What is a Job, Step, ItemReader, ItemProcessor, and ItemWriter in Spring Batch? Explain with an example.
+	4.	How does Spring Batch handle transaction management? What happens if a step fails?
+	5.	Explain the difference between Chunk-Oriented Processing and Tasklet in Spring Batch. When would you use each?
+	6.	How do you configure a batch job using XML or Java configuration in Spring Batch? Which one do you prefer and why?
+	7.	What are job parameters in Spring Batch, and how can you use them to control job execution?
+	8.	How would you implement partitioning in Spring Batch to process large datasets in parallel?
+	9.	What is Spring Batch Restartability, and how does the framework support restarting failed jobs?
+	10.	How would you schedule a Spring Batch job using Spring Scheduler or an external scheduler like Quartz?
+
+Azure Cloud Questions
+
+	1.	What are the key services in Azure that you have used to deploy and manage Java Spring Boot applications?
+	2.	How would you deploy a Spring Boot application to Azure App Services? What are the steps involved?
+	3.	What is Azure Blob Storage? How would you integrate Azure Blob Storage with a Spring Boot application to upload and download files?
+	4.	How does Azure Key Vault work, and how can you use it to manage secrets in your Spring Boot application?
+	5.	What is Azure Active Directory (AAD)? How would you implement OAuth2.0 authentication using AAD in a Spring Boot application?
+	6.	How would you use Azure Service Bus in a Spring Boot application for message-based communication?
+	7.	What is Azure Application Insights? How would you use it to monitor your Spring Boot application?
+	8.	How do you set up Continuous Integration (CI) and Continuous Deployment (CD) pipelines in Azure DevOps for a Spring Boot application?
+	9.	What is Azure Functions, and how would you integrate it with a Spring Boot application for event-driven processing?
+	10.	Explain how you would scale a Spring Boot application deployed on Azure. What are the factors to consider for horizontal or vertical scaling?
+
+Redis Questions
+
+	1.	What is Redis, and how does it differ from traditional relational databases?
+	2.	How would you integrate Redis with a Spring Boot application to implement caching?
+	3.	What is Redis Pub/Sub? Explain how you would use it for real-time messaging in a Spring Boot application.
+	4.	How does Redis handle persistence, and what are the different persistence options available (RDB, AOF)?
+	5.	Explain how Redis manages data in-memory. What are the implications of this for performance and scalability?
+	6.	How would you implement Redis as a session store in a Spring Boot application?
+	7.	What are Redis data types, and how would you use them in various application use cases (e.g., String, Hash, List, Set, Sorted Set)?
+	8.	How would you implement Redis-based distributed locking in a Spring Boot application? Why is distributed locking needed?
+	9.	What is the Redis Sentinel and Redis Cluster? How do they help with high availability and scaling?
+	10.	How would you monitor and optimize Redis performance in a production environment? What metrics would you track?
+
+These questions are designed to evaluate a candidate’s depth of knowledge in various key technologies while also touching upon real-world use cases and best practices.
