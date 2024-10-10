@@ -1,0 +1,55 @@
+For evaluating an intermediate-level Java developer with technical soundness in Spring Boot, Spring Batch, Azure Cloud, and Redis, the questions should probe deeper into practical experience and understanding of core concepts without overwhelming the candidate. Here’s a revised list that focuses on more hands-on aspects while ensuring the candidate can work independently in these areas.
+
+Spring Boot Questions
+
+	1.	What are the advantages of using Spring Boot over the traditional Spring framework? Can you give a real-world example of a project where Spring Boot simplified your development process?
+	2.	Explain how @SpringBootApplication works. What annotations does it combine and how do they function together?
+	3.	How would you handle configuration management for a Spring Boot application in multiple environments (dev, test, prod)?
+	4.	How can you configure a custom DataSource in Spring Boot? Can you use multiple DataSource configurations? How would you manage transactions across them?
+	5.	Explain how you would create a REST API in Spring Boot that handles both JSON and XML. How do you control the response type?
+	6.	Can you explain how Spring Boot supports logging? How would you configure different log levels for different packages?
+	7.	How do you implement a global exception handler in a Spring Boot REST application? Can you give an example with @ControllerAdvice?
+	8.	How do you enable and secure an actuator endpoint in a Spring Boot application? What are the risks and best practices for exposing actuator endpoints?
+	9.	How does Spring Boot integrate with databases using JPA? What is the role of Spring Data JPA, and how would you handle pagination and sorting in a repository?
+	10.	What are some key improvements in Spring Boot 3.x or 2.x that you have utilized in your projects?
+
+Spring Batch Questions
+
+	1.	What are the key components of a Spring Batch job, and how do they interact? Can you walk through a basic batch job example?
+	2.	How would you configure a Spring Batch job that reads data from a CSV file, processes it, and writes it to a database?
+	3.	Explain chunk-based processing in Spring Batch. How do you configure chunk size, and how does it affect performance?
+	4.	How do you handle step failures in Spring Batch? How do you configure a job to restart from the point of failure?
+	5.	What is a JobExecutionListener in Spring Batch, and how would you use it to handle pre- and post-processing tasks?
+	6.	How do you handle large datasets in Spring Batch? Can you explain partitioning and how it helps with performance?
+	7.	How can you pass parameters to a Spring Batch job, and how are they used within a Step?
+	8.	Have you ever worked with a Spring Batch job that integrates with a remote system (e.g., FTP or web services)? How did you handle it?
+	9.	How does Spring Batch handle concurrency? What considerations should you have for scaling batch processing jobs?
+	10.	Can you give an example of how you’ve used Spring Batch for a complex use case like data migration or large-scale data processing?
+
+Azure Cloud Questions
+
+	1.	What Azure services have you used for deploying and managing Spring Boot applications? Can you walk through the process of deploying a Spring Boot app to Azure App Services?
+	2.	How do you configure and use Azure Blob Storage in a Spring Boot application for file uploads and downloads? Provide an example.
+	3.	What is Azure Key Vault, and how can you integrate it with a Spring Boot application to manage secrets? What are the security benefits?
+	4.	Have you used Azure Service Bus? How would you implement asynchronous messaging between microservices using Azure Service Bus in Spring Boot?
+	5.	What are Managed Identities in Azure, and how would you use them for authentication in a Spring Boot application?
+	6.	Can you explain how Azure Application Insights can be integrated into a Spring Boot application? What insights does it provide for monitoring and troubleshooting?
+	7.	How do you configure CI/CD pipelines for a Spring Boot application using Azure DevOps? What best practices do you follow?
+	8.	How would you handle scaling a Spring Boot application in Azure? What factors would influence whether you scale horizontally or vertically?
+	9.	Have you worked with Azure SQL or Cosmos DB in your Spring Boot applications? What considerations do you have when connecting to Azure databases?
+	10.	How do you implement and manage API security in an Azure-based Spring Boot application, possibly using Azure AD for OAuth?
+
+Redis Questions
+
+	1.	How does Redis work as an in-memory data store? Can you explain its use cases in Spring Boot applications?
+	2.	What is the process of integrating Redis with Spring Boot to implement caching? How do you configure Redis as a cache provider?
+	3.	Can you explain how Redis Pub/Sub works and give an example where you’ve used it for real-time messaging in an application?
+	4.	How would you set up Redis as a session store in a Spring Boot application? What are the benefits of using Redis for session management?
+	5.	What are the different types of data structures in Redis (e.g., String, Hash, Set)? How have you used them in your projects?
+	6.	How does Redis handle persistence, and what are the differences between RDB snapshots and AOF (Append Only File)?
+	7.	What is a Redis cluster, and how does it enable horizontal scaling? How would you set up and configure a Redis cluster?
+	8.	Have you used Redis for implementing distributed locks? Why is this necessary, and how do you ensure safety when using distributed locks in Redis?
+	9.	How do you monitor Redis performance in a production environment? What tools or metrics do you use to identify and resolve bottlenecks?
+	10.	How would you handle data eviction in Redis? What eviction policies have you used, and how do you choose the right one for your use case?
+
+These questions aim to evaluate an intermediate developer’s grasp of practical usage, real-world problem-solving, and the ability to architect solutions using Spring Boot, Spring Batch, Azure Cloud, and Redis. The focus here is more on applying knowledge rather than purely theoretical understanding, allowing the candidate to showcase their hands-on experience.
