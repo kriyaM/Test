@@ -1,1 +1,103 @@
- 
+To adjust the specification so that it searches for entities related to (Firm OR Firm Loc) AND ensures that both firstName and lastName are matched from the Entity table, you will likely need to perform a join with the Entity table. Below is the updated specification:
+
+Updated Specification
+
+import org.springframework.data.jpa.domain.Specification;
+
+import javax.persistence.criteria.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class EntityRelSpecification {
+
+    public static Specification<EntityRel> getEntitiesRelatedToFirmWithNames(
+            Long firmEntityKey, String firstName, String lastName) {
+
+        return (root, query, criteriaBuilder) -> {
+            // Join with Entity table to access firstName and lastName
+            Join<EntityRel, Entity> entityJoin = root.join("entity", JoinType.INNER);
+
+            // Subquery for firm locations (type AA)
+            Subquery<Long> firmLocSubQuery = query.subquery(Long.class);
+            Root<EntityRel> firmLocRoot = firmLocSubQuery.from(EntityRel.class);
+
+            // Subquery for firm loc to firm relationship
+            Subquery<Long> firmRelSubQuery = query.subquery(Long.class);
+            Root<EntityRel> firmRelRoot = firmRelSubQuery.from(EntityRel.class);
+
+            firmRelSubQuery.select(firmRelRoot.get("entityKey2"))
+                    .where(
+                        criteriaBuilder.and(
+                            criteriaBuilder.equal(firmRelRoot.get("type"), "AA"),
+                            criteriaBuilder.equal(firmRelRoot.get("entityKey1"), firmEntityKey)
+                        )
+                    );
+
+            firmLocSubQuery.select(firmLocRoot.get("entityKey2"))
+                    .where(
+                        criteriaBuilder.and(
+                            criteriaBuilder.equal(firmLocRoot.get("type"), "AB"),
+                            firmLocRoot.get("entityKey1").in(firmRelSubQuery)
+                        )
+                    );
+
+            // Main query predicate
+            List<Predicate> predicates = new ArrayList<>();
+            // For type AC directly related to firm
+            predicates.add(criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("type"), "AC"),
+                    criteriaBuilder.equal(root.get("entityKey1"), firmEntityKey)
+            ));
+            // For entities related to firm loc
+            predicates.add(criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("type"), "AB"),
+                    root.get("entityKey1").in(firmLocSubQuery)
+            ));
+
+            // Add firstName and lastName predicates from Entity table
+            Predicate firstNamePredicate = criteriaBuilder.equal(entityJoin.get("firstName"), firstName);
+            Predicate lastNamePredicate = criteriaBuilder.equal(entityJoin.get("lastName"), lastName);
+
+            // Combine firm/firm loc with firstName and lastName
+            return criteriaBuilder.and(
+                    criteriaBuilder.or(predicates.toArray(new Predicate[0])),
+                    firstNamePredicate,
+                    lastNamePredicate
+            );
+        };
+    }
+}
+
+Explanation of Changes
+	1.	Entity Join:
+	•	Added a join between the EntityRel table and the Entity table using root.join("entity", JoinType.INNER). This assumes a @ManyToOne or similar relationship between EntityRel and Entity.
+	2.	First Name and Last Name Conditions:
+	•	Created separate predicates for firstName and lastName using the joined Entity table.
+	•	These predicates are combined with the main firm/firm loc predicate using criteriaBuilder.and.
+	3.	Final Predicate:
+	•	The final predicate ensures that entities related to (Firm OR Firm Loc) AND both firstName and lastName match.
+
+Assumptions
+	1.	The EntityRel entity has a @ManyToOne relationship with an Entity table:
+
+@ManyToOne
+@JoinColumn(name = "entityKey2", referencedColumnName = "entityKey")
+private Entity entity;
+
+
+	2.	The Entity class has firstName and lastName fields.
+
+Usage Example
+
+@Service
+public class EntityRelService {
+
+    @Autowired
+    private EntityRelRepository entityRelRepository;
+
+    public List<EntityRel> findEntitiesRelatedToFirm(Long firmEntityKey, String firstName, String lastName) {
+        return entityRelRepository.findAll(EntityRelSpecification.getEntitiesRelatedToFirmWithNames(firmEntityKey, firstName, lastName));
+    }
+}
+
+This implementation ensures that the query fetches entities related to (Firm OR Firm Loc) AND filters by firstName and lastName from the Entity table.
