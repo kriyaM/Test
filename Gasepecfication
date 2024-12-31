@@ -1,128 +1,41 @@
-Here’s a concise solution for your requirement using Spring Data JPA Specification with Predicate and CriteriaBuilder.
+public class ProducerSpecification {
 
-Specification Implementation
+    public static Specification<Producer> hasFirstName(String firstName) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.like(root.get("firstName"), "%" + firstName + "%");
+    }
 
-The following specification retrieves all producers related to firms whose indicator = 'Y' in the EntityIndicator table. It joins the necessary tables using the criteria API.
+    public static Specification<Producer> hasLastName(String lastName) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.like(root.get("lastName"), "%" + lastName + "%");
+    }
 
-import org.springframework.data.jpa.domain.Specification;
-
-import javax.persistence.criteria.*;
-
-public class ProducerSpecifications {
-
-    public static Specification<Producer> fetchProducersForFirmsWithIndicatorY() {
+    public static Specification<Producer> isRelatedToGAFirm() {
         return (root, query, criteriaBuilder) -> {
+            // Subquery to fetch firm IDs from Relation
+            Subquery<Long> firmSubquery = query.subquery(Long.class);
+            Root<Relation> relationRoot = firmSubquery.from(Relation.class);
 
-            // Subquery to fetch firm entity keys with indicator 'Y'
-            Subquery<Long> firmEntityKeySubquery = query.subquery(Long.class);
-            Root<EntityIndicator> entityIndicatorRoot = firmEntityKeySubquery.from(EntityIndicator.class);
-            firmEntityKeySubquery.select(entityIndicatorRoot.get("firmEntityKey"))
-                    .where(criteriaBuilder.equal(entityIndicatorRoot.get("indicator"), "Y"));
+            firmSubquery.select(relationRoot.get("entityKey1"))
+                    .where(
+                        criteriaBuilder.equal(relationRoot.get("type"), "AC"),
+                        criteriaBuilder.equal(relationRoot.get("entityKey2"), root.get("producerId"))
+                    );
 
-            // Join Relation table to fetch producers
-            Root<Relation> relationRoot = query.from(Relation.class);
-            Predicate joinCondition = criteriaBuilder.and(
-                criteriaBuilder.equal(relationRoot.get("type"), "AC"), // Relation type is 'AC'
-                relationRoot.get("entityKey1").in(firmEntityKeySubquery) // Firms with indicator 'Y'
-            );
+            // Subquery to check GA status in GaIndicator
+            Subquery<Long> gaIndicatorSubquery = query.subquery(Long.class);
+            Root<GaIndicator> gaIndicatorRoot = gaIndicatorSubquery.from(GaIndicator.class);
 
-            // Relation's entityKey2 must match producer's primary key
-            Predicate producerCondition = criteriaBuilder.equal(
-                root.get("producerEntityKey"),
-                relationRoot.get("entityKey2")
-            );
+            gaIndicatorSubquery.select(gaIndicatorRoot.get("entityKey"))
+                    .where(
+                        criteriaBuilder.equal(gaIndicatorRoot.get("type"), "GA"),
+                        criteriaBuilder.equal(gaIndicatorRoot.get("indicator"), "Y"),
+                        criteriaBuilder.isNull(gaIndicatorRoot.get("endDate")),
+                        gaIndicatorRoot.get("entityKey").in(firmSubquery)
+                    );
 
-            // Combine predicates
-            return criteriaBuilder.and(joinCondition, producerCondition);
+            // Final filter for producers whose firms are GA
+            return criteriaBuilder.exists(gaIndicatorSubquery);
         };
     }
 }
-
-Explanation
-	1.	Subquery for Firms with Indicator 'Y':
-	•	Fetch firmEntityKey from the EntityIndicator table where indicator = 'Y'.
-	2.	Join with Relation Table:
-	•	Fetch entries where:
-	•	type = 'AC'.
-	•	entityKey1 (firm key) matches the firm keys from the subquery.
-	3.	Join with Producer Table:
-	•	Ensure entityKey2 (producer key) in the Relation table matches the Producer table’s producerEntityKey.
-	4.	Return Matching Producers:
-	•	Combine all conditions using criteriaBuilder.
-
-Service Layer
-
-The service layer can use the specification like this:
-
-@Service
-public class ProducerService {
-
-    private final ProducerRepository producerRepository;
-
-    public ProducerService(ProducerRepository producerRepository) {
-        this.producerRepository = producerRepository;
-    }
-
-    public List<Producer> getProducersForFirmsWithIndicatorY() {
-        return producerRepository.findAll(ProducerSpecifications.fetchProducersForFirmsWithIndicatorY());
-    }
-}
-
-Repository
-
-Ensure your repository extends JpaSpecificationExecutor to support specifications:
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-
-public interface ProducerRepository extends JpaRepository<Producer, Long>, JpaSpecificationExecutor<Producer> {
-}
-
-Entities
-
-EntityIndicator Entity:
-
-@Entity
-public class EntityIndicator {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private Long firmEntityKey;
-    private String indicator;
-}
-
-Relation Entity:
-
-@Entity
-public class Relation {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private Long entityKey1; // Firm
-    private Long entityKey2; // Producer
-    private String type;     // 'AC' for direct relation
-}
-
-Producer Entity:
-
-@Entity
-public class Producer {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long producerEntityKey;
-
-    private String name;
-}
-
-Key Points
-	1.	Subquery and Joins:
-	•	The subquery fetches firms with indicator = 'Y'.
-	•	A join ensures producers are directly related to those firms.
-	2.	Composable Specification:
-	•	The specification is reusable and composable for other queries.
-	3.	Efficient Query:
-	•	The query executes efficiently as it uses subqueries and joins instead of fetching data in-memory.
-
-Let me know if you need further refinements!
