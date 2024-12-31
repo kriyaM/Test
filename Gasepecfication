@@ -39,3 +39,88 @@ public class ProducerSpecification {
         };
     }
 }
+
+public class ProducerSpecification {
+
+    // Filter by firstName
+    public static Specification<Producer> hasFirstName(String firstName) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.like(root.get("firstName"), "%" + firstName + "%");
+    }
+
+    // Filter by lastName
+    public static Specification<Producer> hasLastName(String lastName) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.like(root.get("lastName"), "%" + lastName + "%");
+    }
+
+    // Producer is directly related to a GA firm (AC relation)
+    public static Specification<Producer> isRelatedToGAFirmDirectly() {
+        return (root, query, criteriaBuilder) -> {
+            // Subquery to fetch firm IDs from the relation table (type = AC)
+            Subquery<Long> firmSubquery = query.subquery(Long.class);
+            Root<Relation> relationRoot = firmSubquery.from(Relation.class);
+
+            firmSubquery.select(relationRoot.get("entityKey1"))
+                    .where(
+                        criteriaBuilder.equal(relationRoot.get("type"), "AC"),
+                        criteriaBuilder.equal(relationRoot.get("entityKey2"), root.get("producerId"))
+                    );
+
+            // Subquery to check GA status in gaindicator
+            Subquery<Long> gaIndicatorSubquery = query.subquery(Long.class);
+            Root<GaIndicator> gaIndicatorRoot = gaIndicatorSubquery.from(GaIndicator.class);
+
+            gaIndicatorSubquery.select(gaIndicatorRoot.get("entityKey"))
+                    .where(
+                        criteriaBuilder.equal(gaIndicatorRoot.get("type"), "GA"),
+                        criteriaBuilder.equal(gaIndicatorRoot.get("indicator"), "Y"),
+                        criteriaBuilder.isNull(gaIndicatorRoot.get("endDate")),
+                        gaIndicatorRoot.get("entityKey").in(firmSubquery)
+                    );
+
+            // Producer is related to a GA firm
+            return criteriaBuilder.exists(gaIndicatorSubquery);
+        };
+    }
+
+    // Producer is related to a GA firm indirectly via location
+    public static Specification<Producer> isRelatedToGAFirmIndirectly() {
+        return (root, query, criteriaBuilder) -> {
+            // Subquery to fetch locations related to the producer (type = AB)
+            Subquery<Long> locationSubquery = query.subquery(Long.class);
+            Root<Relation> locationRelationRoot = locationSubquery.from(Relation.class);
+
+            locationSubquery.select(locationRelationRoot.get("entityKey2"))
+                    .where(
+                        criteriaBuilder.equal(locationRelationRoot.get("type"), "AB"),
+                        criteriaBuilder.equal(locationRelationRoot.get("entityKey1"), root.get("producerId"))
+                    );
+
+            // Subquery to fetch firms related to the location (type = AA)
+            Subquery<Long> firmSubquery = query.subquery(Long.class);
+            Root<Relation> firmRelationRoot = firmSubquery.from(Relation.class);
+
+            firmSubquery.select(firmRelationRoot.get("entityKey1"))
+                    .where(
+                        criteriaBuilder.equal(firmRelationRoot.get("type"), "AA"),
+                        firmRelationRoot.get("entityKey2").in(locationSubquery)
+                    );
+
+            // Subquery to check GA status in gaindicator
+            Subquery<Long> gaIndicatorSubquery = query.subquery(Long.class);
+            Root<GaIndicator> gaIndicatorRoot = gaIndicatorSubquery.from(GaIndicator.class);
+
+            gaIndicatorSubquery.select(gaIndicatorRoot.get("entityKey"))
+                    .where(
+                        criteriaBuilder.equal(gaIndicatorRoot.get("type"), "GA"),
+                        criteriaBuilder.equal(gaIndicatorRoot.get("indicator"), "Y"),
+                        criteriaBuilder.isNull(gaIndicatorRoot.get("endDate")),
+                        gaIndicatorRoot.get("entityKey").in(firmSubquery)
+                    );
+
+            // Producer is indirectly related to a GA firm
+            return criteriaBuilder.exists(gaIndicatorSubquery);
+        };
+    }
+}
