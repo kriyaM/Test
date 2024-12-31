@@ -1,1 +1,50 @@
- 
+ import org.springframework.data.jpa.domain.Specification;
+import javax.persistence.criteria.*;
+
+public class AssociateSpecifications {
+
+    public static Specification<Associate> belongsToGAFirmOrLocation() {
+        return (root, query, criteriaBuilder) -> {
+            // Subquery 1: Check if the associate's firmId is a GA firm
+            Subquery<Long> directGAFirmSubquery = query.subquery(Long.class);
+            Root<GAIndicator> gaIndicatorRoot = directGAFirmSubquery.from(GAIndicator.class);
+            directGAFirmSubquery.select(gaIndicatorRoot.get("firmId"))
+                    .where(
+                        criteriaBuilder.equal(gaIndicatorRoot.get("firmId"), root.get("firmId")),
+                        criteriaBuilder.equal(gaIndicatorRoot.get("type"), "GA"),
+                        criteriaBuilder.equal(gaIndicatorRoot.get("indicator"), "Y"),
+                        criteriaBuilder.isNull(gaIndicatorRoot.get("endDate"))
+                    );
+
+            // Subquery 2: Check if the associate's firmId is a location whose firm is GA
+            Subquery<Long> locationToGAFirmSubquery = query.subquery(Long.class);
+            Root<Relation> relationRoot = locationToGAFirmSubquery.from(Relation.class);
+            Subquery<Long> firmFromRelationSubquery = query.subquery(Long.class);
+            Root<GAIndicator> relatedGAFirmRoot = firmFromRelationSubquery.from(GAIndicator.class);
+
+            // Subquery to validate the firm in GAIndicator table
+            firmFromRelationSubquery.select(relatedGAFirmRoot.get("firmId"))
+                    .where(
+                        criteriaBuilder.equal(relatedGAFirmRoot.get("firmId"), relationRoot.get("key1")),
+                        criteriaBuilder.equal(relatedGAFirmRoot.get("type"), "GA"),
+                        criteriaBuilder.equal(relatedGAFirmRoot.get("indicator"), "Y"),
+                        criteriaBuilder.isNull(relatedGAFirmRoot.get("endDate"))
+                    );
+
+            // Subquery to validate the location in Relation table
+            locationToGAFirmSubquery.select(relationRoot.get("key2"))
+                    .where(
+                        criteriaBuilder.equal(relationRoot.get("key2"), root.get("firmId")),
+                        criteriaBuilder.equal(relationRoot.get("type"), "AA"),
+                        criteriaBuilder.isNull(relationRoot.get("endDate")),
+                        criteriaBuilder.exists(firmFromRelationSubquery)
+                    );
+
+            // Combine both subqueries into the final predicate
+            return criteriaBuilder.or(
+                criteriaBuilder.exists(directGAFirmSubquery),
+                criteriaBuilder.exists(locationToGAFirmSubquery)
+            );
+        };
+    }
+}
