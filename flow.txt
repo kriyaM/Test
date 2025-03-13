@@ -1,0 +1,27 @@
+Here’s a high-level flowchart based on your process:
+	1.	Start
+	2.	Read Data from SFTBRKAGR Table
+	3.	Iterate Each Row
+	4.	Check if Valid Customer
+	•	No → Reject File → End
+	•	Yes → Check Agreement Status
+	5.	Check if Agreement is Present
+	•	No → Reject Agreement → End
+	•	Yes → Check HIPAA Compliance
+	6.	Check if HIPAA Compliant
+	•	No → Reject Agreement → End
+	•	Yes → Get Producer Category
+	7.	BIC Derivation
+	8.	Determine Broker & GA Scale
+	9.	Check License and Appointment Status
+	•	Pending → Create Agreement in Pending Status
+	•	Approved → Create Agreement in Approved Status
+	10.	Check for Next Record
+
+	•	Yes → Loop back to iterate next record
+	•	No → Generate Reports
+
+	11.	Send Mail Based on Reports
+	12.	End
+
+I’ll generate a visual flowchart for you.
