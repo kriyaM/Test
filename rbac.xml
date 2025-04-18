@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><rbac:ProtectionDomain xmlns:rbac="http://test.test.com/foundationservices/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" applicationName="PDMF" domainName="" timeStamp="2025-04-08T13:02:58Z" xsi:schemaLocation="http://testnet.test.com/foundationservices/ file:///etc/config/pdmf-oci/data/RbacSchema.xsd ">
+
+	<rbac:roles>
+		<rbac:role roleName="PAISBusiness">
+			<rbac:credentials>
+				<rbac:group>PDMF-PAISBusiness</rbac:group>
+			</rbac:credentials>
+		</rbac:role>
+		<rbac:role roleName="SalesMngmnt">
+			<rbac:credentials>
+				<rbac:group>PDMF-SalesMngmnt</rbac:group>
+			</rbac:credentials>
+		</rbac:role>
+		<rbac:role roleName="MedicareBSD">
+			<rbac:credentials>
+				<rbac:group>PDMF-MedcrBusSupport</rbac:group>
+			</rbac:credentials>
+		</rbac:role>
+<rbac:rules>
+
+		<!--For Role : PAIS Business User -->
+
+		<rbac:rule ruleName="PAIS Business Read">
+			<rbac:allowedRole>PAISBusiness</rbac:allowedRole>
+			<rbac:permission permissionName="PAIS Business Read">
+				<rbac:action>READ</rbac:action>
+				<rbac:resource resourceName="*">
+					<rbac:resourceURI>*</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for A2234-1253 PAIS SUNSET 15/12/17 Release - START -->
+				<rbac:resource resourceName="PAISMAINT">
+					<rbac:resourceURI>PAISMAINT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for A2234-1253 PAIS SUNSET 15/12/17 Release - END -->
+				<!-- Added for A2234-1273 Changes- START -->
+				<rbac:resource resourceName="ASSOCSSN">
+					<rbac:resourceURI>ASSOCSSN</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for A2234-1273 Changes - END -->
+
+				<!-- Added for P29676a Changes- START -->
+				<rbac:resource resourceName="TARGETLISTMAINT">
+					<rbac:resourceURI>TARGETLISTMAINT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- End -->
+
+				<!-- Added for P29676a Changes- START -->
+				<rbac:resource resourceName="REGULATORYINFO">
+					<rbac:resourceURI>REGULATORYINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- End -->
+
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="BANKINFO">
+					<rbac:resourceURI>BANKINFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="W9INFO">
+					<rbac:resourceURI>W9INFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="BGINFO">
+					<rbac:resourceURI>BGINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="CASEINFO">
+					<rbac:resourceURI>CASEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+
+				<!-- Sales Rep Starts -->
+				<rbac:resource resourceName="SALESREP">
+					<rbac:resourceURI>SALESREP</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BROKERSTOSALESAE">
+					<rbac:resourceURI>BROKERSTOSALESAE</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="SALESREPDEFINITION">
+					<rbac:resourceURI>SALESREPDEFINITION</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="SMALLGROUP">
+					<rbac:resourceURI>SMALLGROUP</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Sales Rep End -->
+
+			</rbac:permission>
+		</rbac:rule>
+
+
+		<rbac:rule ruleName="PAIS Business Create_Update">
+			<rbac:allowedRole>PAISBusiness</rbac:allowedRole>
+			<rbac:permission permissionName="PAIS Business Create_Update">
+				<rbac:action>CREATE</rbac:action>
+				<rbac:action>UPDATE</rbac:action>
+				<rbac:resource resourceName="ENTITY">
+					<rbac:resourceURI>ENTITY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ADDRESS">
+					<rbac:resourceURI>ADDRESS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="PHONENUMBER">
+					<rbac:resourceURI>PHONENUMBER</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LICENSING">
+					<rbac:resourceURI>LICENSING</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LABELROLEINFO">
+					<rbac:resourceURI>LABELROLEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BACKGROUND">
+					<rbac:resourceURI>BACKGROUND</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LACONTACT">
+					<rbac:resourceURI>LACONTACT</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="RELATIONSHIP">
+					<rbac:resourceURI>RELATIONSHIP</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="DIARY">
+					<rbac:resourceURI>DIARY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="REMARKS">
+					<rbac:resourceURI>REMARKS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ATTACHMENTS">
+					<rbac:resourceURI>ATTACHMENTES</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="EDREQS">
+					<rbac:resourceURI>EDREQS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="SSN">
+					<rbac:resourceURI>SSN</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="DOB">
+					<rbac:resourceURI>DOB</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="RESIDENTADDRESS">
+					<rbac:resourceURI>RESIDENTADDRESS</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for SR A2234-1055 -->
+				<rbac:resource resourceName="ROLEMAPPING">
+					<rbac:resourceURI>ROLEMAPPING</rbac:resourceURI>
+				</rbac:resource>
+
+				<!-- Added for P20913a Medicare Hierarchy 08/15/14 Release -->
+				<rbac:resource resourceName="APPROVEREJECTHIERARCHY">
+					<rbac:resourceURI>APPROVEREJECTHIERARCHY</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="INACTIVATEHIERARCHY">
+					<rbac:resourceURI>INACTIVATEHIERARCHY</rbac:resourceURI>
+				</rbac:resource>
+
+				<!-- Added for P26428a Medicare Hierarchy 09/08/17 Release - START -->
+				<rbac:resource resourceName="PAYEE">
+					<rbac:resourceURI>PAYEE</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P26428a Medicare Hierarchy 09/08/17 Release - END -->
+
+				<!-- Added for A2234-1253 PAIS SUNSET 15/12/17 Release - START -->
+				<rbac:resource resourceName="PAISMAINT">
+					<rbac:resourceURI>PAISMAINT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for A2234-1253 PAIS SUNSET 15/12/17 Release - END -->
+
+				<!-- Added for P29676a Changes- START -->
+				<rbac:resource resourceName="TARGETLISTMAINT">
+					<rbac:resourceURI>TARGETLISTMAINT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- End -->
+
+				<!-- Added for P29676a Changes- START -->
+				<rbac:resource resourceName="REGULATORYINFO">
+					<rbac:resourceURI>REGULATORYINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- End -->
+
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="BANKINFO">
+					<rbac:resourceURI>BANKINFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="W9INFO">
+					<rbac:resourceURI>W9INFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="BGINFO">
+					<rbac:resourceURI>BGINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="CASEINFO">
+					<rbac:resourceURI>CASEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+				<!-- Added for SR 1561326 ITPR042274 starts -->
+				<rbac:resource resourceName="GAASPROD">
+					<rbac:resourceURI>GAASPROD</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="NOCOMP">
+					<rbac:resourceURI>NOCOMP</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BRKCATEGORY">
+					<rbac:resourceURI>BRKCATEGORY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="CHNTYPE">
+					<rbac:resourceURI>CHNTYPE</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="GATOBRK">
+					<rbac:resourceURI>GATOBRK</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BRKTOGA">
+					<rbac:resourceURI>BRKTOGA</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="COMMISEXCPN">
+					<rbac:resourceURI>COMMISEXCPN</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="STATEEXCPN">
+					<rbac:resourceURI>STATEEXCPN</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="GASTATECONTRACT">
+					<rbac:resourceURI>GASTATECONTRACT</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="APPPRODPAYEE">
+					<rbac:resourceURI>APPPRODPAYEE</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="BROKERPAYEEEXCEPTION">
+					<rbac:resourceURI>BROKERPAYEEEXCEPTION</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="GASELLINGAGENT">
+					<rbac:resourceURI>GASELLINGAGENT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for SR 1561326 ITPR042274 Ends -->
+
+				<!-- Added for SR ACOME3-0439 Starts -->
+
+				<rbac:resource resourceName="IFPSTATUS">
+					<rbac:resourceURI>IFPSTATUS</rbac:resourceURI>
+				</rbac:resource>
+
+				<!-- Added for SR ACOME3-0439 Ends -->
+				<!-- Sales Rep Starts -->
+				<rbac:resource resourceName="SALESREP">
+					<rbac:resourceURI>SALESREP</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BROKERSTOSALESAE">
+					<rbac:resourceURI>BROKERSTOSALESAE</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="SALESREPDEFINITION">
+					<rbac:resourceURI>SALESREPDEFINITION</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="SMALLGROUP">
+					<rbac:resourceURI>SMALLGROUP</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Sales Rep End -->
+
+			</rbac:permission>
+		</rbac:rule>
+
+		<rbac:rule ruleName="PAIS Business Expire">
+			<rbac:allowedRole>PAISBusiness</rbac:allowedRole>
+			<rbac:permission permissionName="PAIS Business Expire">
+				<rbac:action>EXPIRE</rbac:action>
+				<rbac:resource resourceName="ENTITY">
+					<rbac:resourceURI>ENTITY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ADDRESS">
+					<rbac:resourceURI>ADDRESS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="PHONENUMBER">
+					<rbac:resourceURI>PHONENUMBER</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LICENSING">
+					<rbac:resourceURI>LICENSING</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LABELROLEINFO">
+					<rbac:resourceURI>LABELROLEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BACKGROUND">
+					<rbac:resourceURI>BACKGROUND</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LACONTACT">
+					<rbac:resourceURI>LACONTACT</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="RELATIONSHIP">
+					<rbac:resourceURI>RELATIONSHIP</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="DIARY">
+					<rbac:resourceURI>DIARY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="REMARKS">
+					<rbac:resourceURI>REMARKS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ATTACHMENTS">
+					<rbac:resourceURI>ATTACHMENTES</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="EDREQS">
+					<rbac:resourceURI>EDREQS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="SSN">
+					<rbac:resourceURI>SSN</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="DOB">
+					<rbac:resourceURI>DOB</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="RESIDENTADDRESS">
+					<rbac:resourceURI>RESIDENTADDRESS</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for SR A2234-1055 -->
+				<rbac:resource resourceName="ROLEMAPPING">
+					<rbac:resourceURI>ROLEMAPPING</rbac:resourceURI>
+				</rbac:resource>
+
+				<!-- Added for P26428a Medicare Hierarchy 09/08/17 Release - START -->
+				<rbac:resource resourceName="PAYEE">
+					<rbac:resourceURI>PAYEE</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P26428a Medicare Hierarchy 09/08/17 Release - END -->
+
+				<!-- Added for A2234-1253 PAIS SUNSET 15/12/17 Release - START -->
+				<rbac:resource resourceName="PAISMAINT">
+					<rbac:resourceURI>PAISMAINT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for A2234-1253 PAIS SUNSET 15/12/17 Release - END -->
+
+				<!-- Added for P29676a Changes- START -->
+				<rbac:resource resourceName="TARGETLISTMAINT">
+					<rbac:resourceURI>TARGETLISTMAINT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- End -->
+
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="BANKINFO">
+					<rbac:resourceURI>BANKINFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="W9INFO">
+					<rbac:resourceURI>W9INFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="BGINFO">
+					<rbac:resourceURI>BGINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="CASEINFO">
+					<rbac:resourceURI>CASEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+				<!-- Added for SR 1561326 ITPR042274 starts -->
+				<rbac:resource resourceName="GAASPROD">
+					<rbac:resourceURI>GAASPROD</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="NOCOMP">
+					<rbac:resourceURI>NOCOMP</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BRKCATEGORY">
+					<rbac:resourceURI>BRKCATEGORY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="CHNTYPE">
+					<rbac:resourceURI>CHNTYPE</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="GATOBRK">
+					<rbac:resourceURI>GATOBRK</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BRKTOGA">
+					<rbac:resourceURI>BRKTOGA</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="COMMISEXCPN">
+					<rbac:resourceURI>COMMISEXCPN</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="STATEEXCPN">
+					<rbac:resourceURI>STATEEXCPN</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="GASTATECONTRACT">
+					<rbac:resourceURI>GASTATECONTRACT</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="APPPRODPAYEE">
+					<rbac:resourceURI>APPPRODPAYEE</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="BROKERPAYEEEXCEPTION">
+					<rbac:resourceURI>BROKERPAYEEEXCEPTION</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="GASELLINGAGENT">
+					<rbac:resourceURI>GASELLINGAGENT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for SR 1561326 ITPR042274 Ends -->
+
+				<!-- Added for SR ACOME3-0439 Starts -->
+
+				<rbac:resource resourceName="IFPSTATUS">
+					<rbac:resourceURI>IFPSTATUS</rbac:resourceURI>
+				</rbac:resource>
+
+				<!-- Added for SR ACOME3-0439 Ends -->
+
+			</rbac:permission>
+		</rbac:rule>
+
+
+		<!--For Role : Sales Mgmt Exec -->
+
+
+		<rbac:rule ruleName="Sales Mgmt Read">
+			<rbac:allowedRole>SalesMngmnt</rbac:allowedRole>
+			<rbac:permission permissionName="Sales Mgmt Read">
+				<rbac:action>READ</rbac:action>
+				<rbac:resource resourceName="ENTITY">
+					<rbac:resourceURI>ENTITY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ADDRESS">
+					<rbac:resourceURI>ADDRESS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="PHONENUMBER">
+					<rbac:resourceURI>PHONENUMBER</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LICENSING">
+					<rbac:resourceURI>LICENSING</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LABELROLEINFO">
+					<rbac:resourceURI>LABELROLEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LACONTACT">
+					<rbac:resourceURI>LACONTACT</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="RELATIONSHIP">
+					<rbac:resourceURI>RELATIONSHIP</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="REMARKS">
+					<rbac:resourceURI>REMARKS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ATTACHMENTS">
+					<rbac:resourceURI>ATTACHMENTES</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="EDREQS">
+					<rbac:resourceURI>EDREQS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ROLEMAPPING">
+					<rbac:resourceURI>ROLEMAPPING</rbac:resourceURI>
+				</rbac:resource>
+
+				<!-- Added for P20913a Medicare Hierarchy 08/15/14 Release -->
+				<rbac:resource resourceName="APPROVEREJECTHIERARCHY">
+					<rbac:resourceURI>APPROVEREJECTHIERARCHY</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="INACTIVATEHIERARCHY">
+					<rbac:resourceURI>INACTIVATEHIERARCHY</rbac:resourceURI>
+				</rbac:resource>
+
+				<!-- Added for P26428a Medicare Hierarchy 09/08/17 Release - START -->
+				<rbac:resource resourceName="PAYEE">
+					<rbac:resourceURI>PAYEE</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P26428a Medicare Hierarchy 09/08/17 Release - END -->
+
+				<!-- Changes for ACOME3-0373 Starts -->
+				<rbac:resource resourceName="BANKINFO">
+					<rbac:resourceURI>BANKINFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="W9INFO">
+					<rbac:resourceURI>W9INFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="BGINFO">
+					<rbac:resourceURI>BGINFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="CASEINFO">
+					<rbac:resourceURI>CASEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Changes for ACOME3-0373 Ends -->
+
+			</rbac:permission>
+		</rbac:rule>
+		<!-- PCR C 18954 Start -->
+		<rbac:rule ruleName="Medicare BSD Read">
+			<rbac:allowedRole>MedicareBSD</rbac:allowedRole>
+			<rbac:permission permissionName="Medicare BSD Read">
+				<rbac:action>READ</rbac:action>
+				<rbac:resource resourceName="LICENSING">
+					<rbac:resourceURI>LICENSING</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LABELROLEINFO">
+					<rbac:resourceURI>LABELROLEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="LACONTACT">
+					<rbac:resourceURI>LACONTACT</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="RELATIONSHIP">
+					<rbac:resourceURI>RELATIONSHIP</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ROLEMAPPING">
+					<rbac:resourceURI>ROLEMAPPING</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="GAASPROD">
+					<rbac:resourceURI>GAASPROD</rbac:resourceURI>
+				</rbac:resource>
+				
+				<!-- Added for SR ACOME3-0439 Starts -->
+
+				<rbac:resource resourceName="IFPSTATUS">
+					<rbac:resourceURI>IFPSTATUS</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for SR ACOME3-0439 End -->
+				
+				<!-- Added for P20913a Medicare Hierarchy 08/15/14 Release -->
+				<rbac:resource resourceName="APPROVEREJECTHIERARCHY">
+					<rbac:resourceURI>APPROVEREJECTHIERARCHY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="INACTIVATEHIERARCHY">
+					<rbac:resourceURI>INACTIVATEHIERARCHY</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P26428a Medicare Hierarchy 09/08/17 Release - START -->
+				<rbac:resource resourceName="PAYEE">
+					<rbac:resourceURI>PAYEE</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P26428a Medicare Hierarchy 09/08/17 Release - END -->
+
+				<rbac:resource resourceName="DIARY">
+					<rbac:resourceURI>DIARY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="SSN">
+					<rbac:resourceURI>SSN</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="DOB">
+					<rbac:resourceURI>DOB</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- START -->
+				<rbac:resource resourceName="REGULATORYINFO">
+					<rbac:resourceURI>REGULATORYINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- End -->
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="CASEINFO">
+					<rbac:resourceURI>CASEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+
+				<!-- Changes for ACOME3-0373 Starts -->
+				<rbac:resource resourceName="BANKINFO">
+					<rbac:resourceURI>BANKINFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="W9INFO">
+					<rbac:resourceURI>W9INFO</rbac:resourceURI>
+				</rbac:resource>
+
+				<rbac:resource resourceName="BGINFO">
+					<rbac:resourceURI>BGINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Changes for ACOME3-0373 Ends -->
+
+			</rbac:permission>
+		</rbac:rule>
+		<rbac:rule ruleName="Medicare BSD Create_Update">
+			<rbac:allowedRole>MedicareBSD</rbac:allowedRole>
+			<rbac:permission permissionName="Medicare BSD Create_Update">
+				<rbac:action>CREATE</rbac:action>
+				<rbac:action>UPDATE</rbac:action>
+				<rbac:resource resourceName="ENTITY">
+					<rbac:resourceURI>ENTITY</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ADDRESS">
+					<rbac:resourceURI>ADDRESS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="PHONENUMBER">
+					<rbac:resourceURI>PHONENUMBER</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ATTACHMENTS">
+					<rbac:resourceURI>ATTACHMENTES</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="EDREQS">
+					<rbac:resourceURI>EDREQS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BACKGROUND">
+					<rbac:resourceURI>BACKGROUND</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="RESIDENTADDRESS">
+					<rbac:resourceURI>RESIDENTADDRESS</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- START -->
+				<rbac:resource resourceName="REGULATORYINFO">
+					<rbac:resourceURI>REGULATORYINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- End -->
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="CASEINFO">
+					<rbac:resourceURI>CASEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+
+				<!-- ACOME3-0147: Update access to the Contract feature of the PDMF UI 
+					- Started -->
+
+				<rbac:resource resourceName="LACONTACT">
+					<rbac:resourceURI>LACONTACT</rbac:resourceURI>
+				</rbac:resource>
+				<!-- ACOME3-0147: Update access to the Contract feature of the PDMF UI 
+					- End -->
+
+			</rbac:permission>
+		</rbac:rule>
+		<rbac:rule ruleName="Medicare BSD Create">
+			<rbac:allowedRole>MedicareBSD</rbac:allowedRole>
+			<rbac:permission permissionName="Medicare BSD Create">
+				<rbac:action>CREATE</rbac:action>
+				<rbac:resource resourceName="REMARKS">
+					<rbac:resourceURI>REMARKS</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- START -->
+				<rbac:resource resourceName="REGULATORYINFO">
+					<rbac:resourceURI>REGULATORYINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P29676a Changes- End -->
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="CASEINFO">
+					<rbac:resourceURI>CASEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+			</rbac:permission>
+		</rbac:rule>
+
+		<rbac:rule ruleName="Medicare BSD Expire">
+			<rbac:allowedRole>MedicareBSD</rbac:allowedRole>
+			<rbac:permission permissionName="Medicare BSD Expire">
+				<rbac:action>EXPIRE</rbac:action>
+				<rbac:resource resourceName="ADDRESS">
+					<rbac:resourceURI>ADDRESS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="PHONENUMBER">
+					<rbac:resourceURI>PHONENUMBER</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="ATTACHMENTS">
+					<rbac:resourceURI>ATTACHMENTES</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="EDREQS">
+					<rbac:resourceURI>EDREQS</rbac:resourceURI>
+				</rbac:resource>
+				<rbac:resource resourceName="BACKGROUND">
+					<rbac:resourceURI>BACKGROUND</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- START -->
+				<rbac:resource resourceName="CASEINFO">
+					<rbac:resourceURI>CASEINFO</rbac:resourceURI>
+				</rbac:resource>
+				<!-- Added for P28452a Changes- End -->
+				<rbac:resource resourceName="LACONTACT">
+					<rbac:resourceURI>LACONTACT</rbac:resourceURI>
+				</rbac:resource>
+
+			</rbac:permission>
+		</rbac:rule>
+		
+		<!-- Sales Rep End -->
+
+	</rbac:rules>
+
+
+	
+<rbac:digest>JxoTe8a2621QBgXjdq+d4Q==</rbac:digest></rbac:ProtectionDomain>
