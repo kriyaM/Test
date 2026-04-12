@@ -1,0 +1,95 @@
+🟦 1. Move Configs to DB
+
+✔️ TODO
+	•	Identify all 5 constants in Java
+	•	Note their current values
+	•	Check config table structure
+	•	Write INSERT scripts for all 5 configs
+	•	Execute inserts in DB
+	•	Create method to fetch config (DAO/service)
+	•	Replace constants with DB calls in code
+	•	Add null/default handling (important)
+	•	Test config values are loaded correctly
+
+👉 NEXT: Replace constants in service layer
+
+⸻
+
+🟩 2. Move LPAD / TRIM from SP to Java
+
+✔️ TODO
+	•	Locate LPAD/TRIM usage in SP
+	•	Understand exact formatting (length, padding char)
+	•	Implement equivalent in Java:
+	•	LPAD logic
+	•	TRIM logic
+	•	Remove / reduce usage from SP
+	•	Ensure no duplicate formatting (SP + Java)
+	•	Test with sample inputs
+	•	Validate output matches old behavior
+
+👉 NEXT: Test edge cases (null, short strings)
+
+⸻
+
+🟨 3. Check Error Messages
+
+✔️ TODO
+	•	Search all error messages in code
+	•	Identify unclear / technical messages
+	•	Replace with user-friendly messages
+	•	Ensure consistency in wording
+	•	Remove sensitive/internal details
+	•	Standardize format (e.g., “Unable to process request”)
+	•	Test error scenarios
+
+👉 NEXT: Align messages across all layers
+
+⸻
+
+🟥 4. Error Handling (Try-Catch)
+
+✔️ TODO
+	•	Identify risky blocks:
+	•	DB calls
+	•	External/API calls
+	•	Add try-catch blocks
+	•	Log exception inside catch
+	•	Throw meaningful custom exception (if needed)
+	•	Avoid generic Exception where possible
+	•	Ensure no silent failures
+	•	Test failure scenarios
+
+👉 NEXT: Wrap service layer methods
+
+⸻
+
+🟪 5. Logging
+
+✔️ TODO
+	•	Add log at method start (important methods)
+	•	Add log at method end (optional)
+	•	Add error logs inside catch blocks
+	•	Log key inputs (not everything)
+	•	Use correct log levels:
+	•	info
+	•	debug
+	•	error
+	•	Remove unnecessary logs (avoid noise)
+	•	Verify logs are meaningful
+
+👉 NEXT: Add logs in service + controller
+
+⸻
+
+⬜ 6. Documentation
+
+✔️ TODO
+	•	Add method-level comments
+	•	Describe purpose of main methods
+	•	Document input & output
+	•	Add high-level flow (important)
+	•	Document config usage (DB configs)
+	•	Keep it short and clear (no essays)
+
+👉 NEXT: Add summary for batch job flow
